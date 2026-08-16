@@ -1,10 +1,14 @@
 # Gate 1 — Physical Pipeline Proof Plan
 
 **Document:** `GATE_1_PHYSICAL_PIPELINE_PLAN.md`
-**Version:** 1.0
+**Version:** 1.1 — subject updated at Gate 0.5
 **Status:** Approved plan. **Not yet executed.**
 **Date:** 2026-08-16
-**Depends on:** `AI_TSHIRT_STUDIO_TECHNICAL_SPEC_V1.md` (v1.1), `AI_TSHIRT_STUDIO_ARCHITECTURE_DECISION_V1.md`, `PRINTER_REQUIREMENTS_CHECKLIST.md`
+**Depends on:** `AI_TSHIRT_STUDIO_TECHNICAL_SPEC_V1.md` (v1.2), `AI_TSHIRT_STUDIO_ARCHITECTURE_DECISION_V1.md` (v1.1), `PRINTER_REQUIREMENTS_CHECKLIST.md`, `brand/the-incredible-you.json`
+
+> **Gate 0.5 changes:** the test *subject* changed from a generic concept to real brand work; the calibration
+> sheet gained brand red and IP string-fidelity probes; validation gained the canonical-string assertion.
+> **Structure, stage count and scope are unchanged** — Gate 1 remains a single fixed physical-pipeline proof.
 
 ---
 
@@ -29,7 +33,7 @@ Software is written only where it is the shortest path to a measurable physical 
 
 ### 1.1 Non-goals
 
-Gate 1 does **not** build: a database, a web UI, a job queue, revision-tree navigation, a Design Director
+Gate 1 does **not** build: a database, a web UI, a job queue, revision-tree navigation, a Creative Director
 service, multiple creative directions, collections, mockups, vectorization, ComfyUI, or upscaling unless
 Stage 5 proves it necessary.
 
@@ -52,9 +56,11 @@ Gate 1 is complete when **all** hold:
    data.
 4. Measured values for **minimum reliable stroke width** and **partial-alpha behaviour** are recorded and
    encoded as validator thresholds (spec §15.2, §15.3).
-5. Every deviation between the digital file and the physical shirt is either explained or explicitly
+5. **Proprietary terminology survived the transfer with exact spelling** — hyphens and capitalisation
+   intact — with the smallest reliable size recorded per term (spec §15.5, **D-06**).
+6. Every deviation between the digital file and the physical shirt is either explained or explicitly
    logged as unexplained.
-6. All evidence exists **outside** the engineering environment (**D-13**).
+7. All evidence exists **outside** the engineering environment (**D-13**).
 
 Failing to produce an acceptable shirt is **not** a failed gate, provided the cause is identified. An
 unexplained failure is a failed gate.
@@ -76,17 +82,29 @@ transfer is ordered.
 
 ### Stage 1 — One fixed concept
 
-A single hardcoded concept. No Design Director, no LLM abstraction, no multiple directions.
+A single hardcoded concept. No Creative Director, no LLM abstraction, no multiple directions.
 
-Recommended: **"MIND HACKER"** — black oversized tee, large back graphic, white artwork with one
-electric-blue accent.
+**Subject: `THE INCREDIBLE YOU`** — black tee, large back graphic, white artwork with a brand-red accent.
+`usage_tier: brand_inspired`.
 
 **Why this one.** It is typography-led, which stresses the highest-risk rule in the specification
 (**D-06**); it uses a limited palette, which tests deterministic keying (**D-08**); and it has a single
-accent colour, which gives the colour comparison in Stage 10 something specific to converge on. A safe
-concept would prove less.
+accent colour, which gives the colour comparison in Stage 10 something specific to converge on. Using real
+brand work rather than a throwaway concept costs nothing and produces a genuinely usable first shirt.
 
-**Output:** a committed brief JSON conforming to spec §6.2, with `message_is_authoritative: true`.
+**Why the brand name and not a proprietary term.** `THE INCREDIBLE YOU` has known, unambiguous spelling and
+requires no meaning to design around. Using `N-Codes` or `Inner DNA` as the *headline* would force exactly
+the invented-meaning decision **D-16** prohibits — designing around a term whose meaning has not been
+supplied. Those terms are instead tested for string fidelity in the Stage 7 text ladder, where they need no
+interpretation at all.
+
+**Why this is not official logo usage.** The words are typeset as an **original typographic merchandise
+composition** via deterministic typography. The official brand mark is a separate supplied asset, is not
+available, and must not be reconstructed, traced or approximated from screenshots (**D-17**). Gate 1 uses
+`usage_tier: brand_inspired`, never `official_logo`.
+
+**Output:** a committed brief JSON conforming to spec §6.2, with `message_is_authoritative: true` and a
+`brand` block carrying `authoritative_strings: ["THE INCREDIBLE YOU"]`.
 
 ---
 
@@ -162,12 +180,14 @@ upscaling enters scope **only** if this stage proves it necessary.
 
 Run the deterministic validator against the Stage 0 profile. Must return **PASS** before anything is sent.
 
-Includes the three additions from **D-10**:
+Includes the four additions from **D-10**:
 
 - **Alpha quality** — partial-alpha confined to a narrow edge band; no stray colour in transparent pixels;
   no accidental opaque plane.
 - **Minimum feature size** — measured at final print scale against `min_reliable_stroke_mm`.
 - **Rendered bounds** — actual inked extents versus declared physical size.
+- **Canonical-string assertion** — composited authoritative text byte-matches its source (spec §15.5).
+  For Gate 1 that is `THE INCREDIBLE YOU`. Any mismatch is a FAIL, never a WARNING.
 
 Plus format, pixel dimensions, effective DPI, colour space, maximum dimensions, aspect consistency, and
 checksum.
@@ -193,10 +213,10 @@ claims into measured fact. It costs one extra area on a transfer already being p
 
 | Element | Specification | Answers |
 |---|---|---|
-| **Colour ramp** | Patches at known RGB values, **including the exact electric blue from Stage 1**, each labelled with its hex value | How far does printed colour drift from digital? Is the accent reproducible? |
+| **Colour ramp** | Patches at known RGB values, **including brand red** (hex required — spec §26 Q7), each labelled with its hex value | How far does printed colour drift from digital? **Is brand red reproducible?** This is the colour that will be reprinted indefinitely |
 | **Greyscale wedge** | 0%, 10%, 25%, 50%, 75%, 90%, 100% | Tonal response and where highlights/shadows collapse |
 | **Stroke ladder** | Solid lines at 0.25, 0.5, 1, 2, 3, 4 mm at final print scale, labelled | **Measured minimum reliable stroke** → validator threshold (spec §15.3) |
-| **Text ladder** | Same string at 6, 8, 10, 12, 16 pt at final scale | Smallest legible text after transfer |
+| **Text ladder** | Strings at 6, 8, 10, 12, 16 pt at final scale. **Include `N-Codes`, `E-Codes` and `Inner DNA` verbatim** | Smallest legible text after transfer, **and hyphen/mixed-case fidelity on real proprietary terminology at every size** |
 | **Edge pair** | One hard-edged shape beside one with a soft gradient fading to transparent | **Partial-alpha behaviour over white underbase** → validator threshold (spec §15.2). Directly tests the haze failure mode |
 | **Reference ruler** | Printed 100 mm scale with 10 mm graduations | Detects RIP rescaling. Measured with a physical ruler at Stage 10 |
 | **Registration marks** | Corner marks at known separation | Distortion and dimensional accuracy across the sheet |
@@ -206,6 +226,10 @@ claims into measured fact. It costs one extra area on a transfer already being p
 
 - Every element **labelled in print** with its nominal value. An unlabelled calibration mark is unreadable
   after transfer.
+- **Proprietary terms in the text ladder are string-fidelity probes only.** They are typeset verbatim via
+  deterministic typography and carry no illustration, symbol or visual interpretation. This measures
+  hyphen and capitalisation survival at print scale — the characters most likely to degrade — while
+  requiring **no design decision about meaning** (**D-16**).
 - Generated by the **same pipeline** as the artwork — same sizing, keying and export path. A calibration
   sheet produced by a different route measures the wrong thing.
 - Committed as a versioned asset and reused for every future printer or process change.
@@ -254,6 +278,7 @@ Measurement, not impression.
 | **Partial alpha** | Compare hard-edge and soft-edge shapes. Is haze, residue or a visible film boundary present? **Record as the alpha-quality threshold.** |
 | **Colour** | Photograph the colour ramp beside the digital file under controlled, consistent lighting. Note the drift on the accent colour specifically. |
 | **Typography** | Verify wording is exactly correct — the direct test of **D-06**. |
+| **IP string fidelity** | Inspect `N-Codes`, `E-Codes`, `Inner DNA` in the text ladder at every size. **Confirm hyphens survived and capitalisation is exact.** Record the smallest size at which each remains correct — this is the physical counterpart to the §15.5 assertion. |
 | **Orientation** | Confirm the orientation marker reads correctly, settling the mirroring question empirically. |
 | **Placement & size** | Measure position on the garment against intent. |
 | **Durability** *(optional but recommended)* | Wash once and re-inspect. Cracking, lifting or fade appears here, not at press time. |
@@ -301,7 +326,7 @@ correctness burden and should approach full unit coverage.
 Written under **D-01**: the core takes values and returns values, with no knowledge of its caller. A
 browser UI added later must require zero core changes.
 
-**Not written:** database, web server, queue, revision navigation, Design Director service, mockups,
+**Not written:** database, web server, queue, revision navigation, Creative Director service, mockups,
 vectorization, upscaling (unless Stage 5 forces it).
 
 ---

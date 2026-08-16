@@ -3,10 +3,27 @@
 **Document:** `PRINTER_REQUIREMENTS_CHECKLIST.md`
 **Version:** 1.0
 **Status:** **BLOCKING for Gate 1 physical production.**
-**Date:** 2026-08-16
+**Date:** 2026-08-16 (partial evidence recorded at Gate 0.5)
 
 The answers below populate the printer profile. No transfer is ordered against assumptions, and no
 artwork is declared print-ready without a profile sourced from these replies.
+
+> ### Partial evidence received — 2 of 14
+>
+> The printer has stated **"PNG without background"** (2026-08-16). That confirms **exactly two** things:
+> **Q2** — PNG accepted/preferred — and **Q6** — transparency required.
+>
+> **Nothing else is inferred from it.** Not DPI, colour profile, mirroring, maximum dimensions, minimum
+> feature size, or transfer technology.
+>
+> Both questions are **retained in Part A**: the reply was informal, and confirmation costs nothing.
+>
+> **This checklist remains blocking.** The two answered items are among the *least* consequential in the
+> profile. Every field that gates validation — minimum detail (**Q9**), underbase behaviour (**Q7**), DPI
+> (**Q3**) and maximum dimensions (**Q4**) — is still open.
+>
+> Supplied T-shirt examples show desired finished merchandise. They are **not** evidence of the printer's
+> technical process.
 
 **Part A** is written to be sent to the printer as-is. **Part B** is internal and should not be sent.
 
@@ -80,13 +97,13 @@ Record answers verbatim. Leave unanswered fields **blank** — never fill them w
 | # | Question | Profile field | Answer | Date |
 |---|---|---|---|---|
 | 1 | Process | `process` | | |
-| 2 | Accepted formats | `accepted_formats` | | |
-| 2 | Preferred format | `preferred_format` | | |
+| 2 | Accepted formats | `accepted_formats` | PNG *(partial — "PNG without background")* | 2026-08-16 |
+| 2 | Preferred format | `preferred_format` | PNG *(partial)* | 2026-08-16 |
 | 3 | DPI | `required_dpi` | | |
 | 4 | Max width (mm) | `max_width_mm` | | |
 | 4 | Max height (mm) | `max_height_mm` | | |
 | 5 | Colour mode | `colour_space` | | |
-| 6 | Transparency required | `requires_transparency` | | |
+| 6 | Transparency required | `requires_transparency` | true *(partial — "without background")* | 2026-08-16 |
 | 7 | White underbase / partial alpha | `white_underbase_behaviour` | | |
 | 8 | RIP mirrors | `rip_handles_mirroring` | | |
 | 9 | Min reliable stroke/text | `min_reliable_stroke_mm` | | |

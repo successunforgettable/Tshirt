@@ -1,10 +1,15 @@
 # AI T-Shirt Studio — Technical Specification V1
 
 **Document:** `AI_TSHIRT_STUDIO_TECHNICAL_SPEC_V1.md`
-**Version:** 1.1 — revised at Gate 0
-**Status:** Accepted baseline. Supersedes V1.0.
+**Version:** 1.2 — extended at Gate 0.5 (Brand Baseline)
+**Status:** Accepted baseline. Supersedes V1.1.
 **Date:** 2026-08-16
-**Supersedes:** V1.0 (2026-08-16), reviewed and accepted as PASS WITH CHANGES.
+**Supersedes:** V1.0 (revised at Gate 0), V1.1 (extended at Gate 0.5).
+
+> **Gate 0.5 changes (v1.1 → v1.2):** brand layer added to the architecture (§4.1, §6.3); Design Director
+> renamed **Creative Director** and constrained by D-16 (§7); canonical-string assertion added to
+> validation (§15.5); printer evidence recorded (§14); brand/IP rules added (§18.0, §24). **No Gate 0
+> decision reversed.** The creative target changed; the architecture did not.
 
 > **Companion documents**
 > - `AI_TSHIRT_STUDIO_ARCHITECTURE_DECISION_V1.md` — locked decisions and their evidence
@@ -160,10 +165,16 @@ tshirt/
 │   ├── hosted.py      hosted API implementation
 │   └── file.py        FileProvider — non-AI input path
 │
+├── brand/             Brand DNA — versioned DATA + loader (D-15)
+│   └── the-incredible-you.json
 ├── brief/             structured brief generation (LLM-backed)
 ├── store/             manifest + asset store behind an interface
 └── cli/               thin adapter over core/  ← the only V1 entry point
 ```
+
+`brand/` is data, not infrastructure — one JSON file and a loader. `core/` never reads it directly; the
+brief layer resolves Brand DNA into the `authoritative_strings` that validation consumes (§15.5), which
+keeps **D-01** intact.
 
 **Deliberately absent from V1:** web server, database server, job queue, message broker, container
 orchestration, ComfyUI, vectorizer, GPU dependency, microservices.
@@ -213,29 +224,57 @@ It is first converted to a structured brief:
 
 ```json
 {
-  "concept": "Mind Hacker",
-  "message": "MIND HACKER",
+  "concept": "The Incredible You — headline",
+  "message": "THE INCREDIBLE YOU",
   "message_is_authoritative": true,
-  "garment": { "type": "oversized_tshirt", "colour": "black", "size": "L" },
+  "garment": { "type": "tshirt", "colour": "black", "size": "L" },
   "placement": "large_back",
-  "aesthetic": ["premium streetwear", "futuristic", "sophisticated"],
-  "palette": ["white", "electric blue"],
+  "aesthetic": ["motivational", "headline-led", "restrained premium"],
+  "palette": ["white", "brand red"],
   "typography_role": "dominant",
-  "graphic_complexity": "medium",
-  "creative_directions": 4
+  "graphic_complexity": "low",
+  "creative_directions": 4,
+
+  "brand": {
+    "usage_tier": "brand_inspired",
+    "vocabulary_used": [],
+    "authoritative_strings": ["THE INCREDIBLE YOU"],
+    "logo_asset": null
+  }
 }
 ```
 
 `message_is_authoritative: true` binds the pipeline to §10: that wording is rendered by the typography
 engine, never by the image model.
 
+### 6.3 Brand block
+
+The `brand` block is the **single seam between creative reasoning and deterministic validation.**
+Everything upstream of it may be fuzzy and conversational; everything downstream is exact.
+
+| Field | Meaning |
+|---|---|
+| `usage_tier` | One of `official_logo`, `brand_inspired`, `campaign`, `universe_original` (§7.3) |
+| `vocabulary_used` | Brand DNA entry ids referenced by this design |
+| `authoritative_strings` | Exact strings the validator must assert byte-match on (§15.5) |
+| `logo_asset` | Required file reference when `usage_tier` is `official_logo`; otherwise `null` (**D-17**) |
+
+`authoritative_strings` are resolved from Brand DNA `exact_spelling` values, or from operator-supplied
+verbatim wording. They are the input to §15.5.
+
 ---
 
-## 7. Design Director
+## 7. Creative Director
+
+> Renamed from "Design Director" at Gate 0.5 to match product terminology. One component, one name.
 
 An LLM-backed reasoning layer translating intent into coherent visual directions. It determines dominant
-message, hierarchy, composition, typography role, visual metaphors, garment constraints, colour strategy,
-print-technique implications, and whether the design is typography-led, illustration-led, or photographic.
+message, hierarchy, composition, typography role, visual metaphors **(subject to §7.2)**, garment
+constraints, colour strategy, print-technique implications, and whether the design is typography-led,
+illustration-led, or photographic.
+
+It combines: Brand DNA; approved Brand Vocabulary; requested message/concept; garment colour; placement;
+visual direction; typography; artwork; and print constraints.
 
 **Multiple directions** must be meaningfully different — distinct creative strategies, not four seeds of
 one prompt. Each carries its own generation brief.
@@ -244,6 +283,48 @@ one prompt. Each carries its own generation brief.
 regardless, because downstream code consumes it.
 
 **The LLM provider must be replaceable.** Business logic must not couple to a single vendor.
+
+### 7.1 Brand DNA consumption
+
+The Creative Director loads `brand/the-incredible-you.json` into context and emits the `brand` block
+(§6.3). That is the whole mechanism — no retrieval, no embeddings, no search index (**D-15**).
+
+Semantic understanding of vocabulary comes **only** from supplied `meaning` fields. It must never come
+from the model's own inference about a term's surface form.
+
+### 7.2 Unknown meaning — exact but opaque *(**D-16**)*
+
+> Where a vocabulary entry's `meaning` is `null`, the term **may be used as exact text** and set in brand
+> typography. It **must not drive visual metaphor, symbolism, or illustrative concept.**
+
+Illustrating a term whose meaning is unknown *invents* that meaning and prints it. Spelling the term
+perfectly while illustrating it wrongly is the worse outcome, because the result looks authoritative.
+
+In practice: "five designs around N-Codes" yields five **typographic** treatments of a correctly spelled
+term — differing in weight, scale, structure, contrast and composition — not five interpretations of what
+it means. Supplying `meaning` unlocks illustrative territory for that term automatically.
+
+The Creative Director must never infer meaning, programme ownership, relationships, approved usage or
+symbolism that the product owner has not supplied.
+
+### 7.3 Usage tiers
+
+| Tier | Requires | Rule |
+|---|---|---|
+| `official_logo` | A **supplied authoritative logo asset** | Asset is **placed, never generated** (**D-17**). Currently unavailable — no assets supplied |
+| `brand_inspired` | Approved vocabulary + creative territory | May typeset the canonical brand name and approved vocabulary as exact text. Must not reproduce or approximate the official mark |
+| `campaign` | Approved vocabulary for the programme | As `brand_inspired`. Programme association comes from Brand DNA, never inferred |
+| `universe_original` | Creative territory only | Fully original; no mark reproduction |
+
+### 7.4 The name is not the mark *(**D-17**)*
+
+The canonical brand name `THE INCREDIBLE YOU` is a **text string** and may be typeset in original
+merchandise compositions. **This is not official logo usage.**
+
+The official brand mark is a **file**. Screenshots demonstrating the existing identity are **not**
+authoritative production assets. Reconstructing, tracing, redrawing, approximating or generating the
+official logo — from screenshots, from descriptions, or from the `identity_observations` recorded in Brand
+DNA — is prohibited.
 
 ---
 
@@ -335,6 +416,18 @@ changes a free re-render, and removes an entire validation burden.
 
 Print shops independently require text converted to outlines to prevent font substitution — a rasterised
 deterministic composite satisfies this by construction.
+
+### 10.0 Why this is an IP control, not only a cost control
+
+Proprietary terminology is structurally hostile to image models. Hyphens, internal capitalisation and
+plurals are the first things diffusion text rendering degrades: `N-Codes` becomes `N Codes`, `NCodes`,
+`N-Code`. That is not a typo — it is **corruption of proprietary terminology**, made permanent on
+merchandise.
+
+Terms including `Inner DNA`, `Baselines`, `N-Codes`, `E-Codes`, `Outcomes Plus`,
+`Secret Millionaire Blueprint` and the canonical brand name `THE INCREDIBLE YOU` **must never be
+silently misspelled by an image model.** §15.5 makes this machine-checkable rather than relying on
+proofreading.
 
 ### 10.1 Typography layer
 
@@ -430,14 +523,15 @@ Printer requirements must never be hard-coded. A profile describes one supplier 
 ```json
 {
   "name": "",
-  "process": "",
-  "accepted_formats": [],
-  "preferred_format": "",
+  "process": null,
+  "accepted_formats": ["PNG"],
+  "preferred_format": "PNG",
+  "requires_transparency": true,
+  "_evidence": "Format and transparency confirmed by printer 2026-08-16 ('PNG without background'). Nothing else is inferred from that statement.",
   "required_dpi": null,
   "colour_space": null,
   "max_width_mm": null,
   "max_height_mm": null,
-  "requires_transparency": null,
   "white_underbase_behaviour": "",
   "rip_handles_mirroring": null,
   "min_reliable_stroke_mm": null,
@@ -450,6 +544,20 @@ Printer requirements must never be hard-coded. A profile describes one supplier 
   "custom_requirements": {}
 }
 ```
+
+### 14.0 Confirmed vs outstanding
+
+The printer has stated **"PNG without background"** (2026-08-16). That confirms **exactly two things**:
+PNG is accepted/required, and transparency is required.
+
+**Nothing else is inferred from it** — not DPI, colour profile, mirroring, maximum dimensions, minimum
+feature size, or transfer technology. Note the arithmetic: the two confirmed fields are among the *least*
+consequential in the profile. Every field that gates validation — `min_reliable_stroke_mm`,
+`white_underbase_behaviour`, `required_dpi`, `max_width_mm` — remains open, so
+`PRINTER_REQUIREMENTS_CHECKLIST.md` is **still blocking** (§14.2).
+
+Supplied T-shirt examples show desired finished merchandise. They are **not** evidence of the printer's
+technical process.
 
 ### 14.1 No invented defaults
 
@@ -516,6 +624,23 @@ Thresholds are populated from measured Gate 1 calibration results (§17), not fr
 
 Catches silent rescaling and mis-declared sizes before they reach film.
 
+### 15.5 Canonical-string assertion — new *(**D-10** amendment)*
+
+Every string in the brief's `brand.authoritative_strings` (§6.3) must **byte-match** its source: the
+`exact_spelling` recorded in Brand DNA, or the operator's verbatim wording.
+
+- Comparison is exact — case-sensitive, punctuation-sensitive, whitespace-sensitive
+- Hyphens and internal capitalisation are significant: `N-Codes` ≠ `N Codes` ≠ `NCodes` ≠ `N-Code`
+- Any mismatch is a **FAIL**, never a WARNING
+- If `usage_tier` is `official_logo`, a `logo_asset` must be present and resolvable (**D-17**)
+
+**Why this exists.** Before Brand DNA there was no canonical form to compare against, so wording
+correctness rested on human proofreading. There now is one. This is a pure function over two strings — no
+I/O, no model, negligible cost — and it converts the highest-severity IP risk in the system (§10.0) from a
+discipline into a machine check that fails closed.
+
+It does **not** replace §10. It verifies that §10 was obeyed.
+
 ---
 
 ## 16. Printer Package
@@ -523,9 +648,9 @@ Catches silent rescaling and mis-declared sizes before they reach film.
 Deterministic, human-readable, and unambiguous about which file is production artwork.
 
 ```
-MIND-HACKER-007/
+INCREDIBLE-YOU-001/
 ├── PRINT/
-│   └── mind-hacker-007.png        ← production artwork; the only printable file
+│   └── incredible-you-001.png        ← production artwork; the only printable file
 ├── PREVIEW/
 │   ├── black-back.jpg             ← approval only; NOT for printing
 │   └── black-front.jpg
@@ -571,6 +696,20 @@ Verified at Gate 0 by fetching each project's actual `LICENSE` file.
 | ComfyUI | GPL-3.0 | **Excluded** |
 | ComfyUI-RMBG | GPL-3.0 | **Excluded** |
 | **BRIA RMBG-2.0** | **CC BY-NC 4.0** | **PROHIBITED — commercial use requires a paid BRIA agreement** |
+
+### 18.0 Brand and reference IP
+
+Distinct from software licensing, and equally binding.
+
+1. **Brand assets and vocabulary are proprietary product-owner IP.** Brand DNA content originates only
+   from product-owner material.
+2. **Reference images are inspiration for composition and style diversity only.** Supplied artwork must
+   **never** be reproduced, traced, imitated or derived from. Reference material informs *direction*, never
+   *content*.
+3. **Screenshots are not authoritative production assets.** The official brand mark must never be
+   reconstructed, traced, redrawn, approximated or generated from them (**D-17**).
+4. **Meanings are never invented.** Definitions, relationships, programme ownership, approved usage and
+   creative symbolism for proprietary terminology come from the product owner or remain `null` (**D-16**).
 
 ### 18.1 Standing rules
 
@@ -673,6 +812,14 @@ physical pipeline is proven.**
 13. Not every design becomes a vector.
 14. Evidence must reach durable storage before a gate is declared complete.
 15. **Physical print quality is the ultimate acceptance criterion.**
+16. **Brand marks are placed assets, never generated, traced or approximated.** The canonical brand *name*
+    is a text string; the *mark* is a file. They are never substituted for one another.
+17. **Vocabulary with unknown meaning may be set as exact text but must never drive visual metaphor.**
+    Illustrating an unknown term invents its meaning.
+18. **Meanings, relationships and programme ownership are never inferred** — supplied by the product owner
+    or left `null`.
+19. **Reference artwork is never reproduced, traced, imitated or derived from.**
+20. **Authoritative strings are byte-matched before export** (§15.5).
 
 ---
 
@@ -710,6 +857,9 @@ Outstanding:
 | 4 | Confirmed transfer process — DTF or otherwise | Whether §13 is deleted or reinstated |
 | 5 | Garment sizes carried, and whether print dimensions vary by size | Physical sizing model |
 | 6 | Commercial-use terms for generated outputs of the chosen hosted provider | Commercial sale of output |
+| 7 | **Brand red exact hex** — from authoritative assets, never sampled from screenshots | Gate 1 calibration colour ramp |
+| 8 | **Authoritative logo asset files** | `usage_tier: official_logo` — currently unavailable (**D-17**). Not needed for Gate 1 |
+| 9 | **Meanings for proprietary vocabulary** — all six currently `null` | Illustrative treatment of those terms (**D-16**). Typographic treatment is available now |
 
 ---
 

@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "brand": "The Incredible You",
+  "last_updated": "2026-08-16",
+  "gate": "0.5 — Brand Baseline",
+
+  "_schema_notes": {
+    "authority": "Every value in this file is either supplied directly by the product owner or is null. Null means UNKNOWN, never 'default' and never 'to be inferred'.",
+    "no_inference": "Meanings, relationships, programme ownership, approved usage and creative symbolism must never be inferred. Only the product owner may supply them.",
+    "status_semantics": "status governs approval of the TERM AND ITS SPELLING, not its meaning. A term may be status='approved' while meaning is null: the string is authoritative and printable, its meaning is unknown. See D-16.",
+    "exact_spelling_is_authoritative": "exact_spelling is the sole authority for the canonical-string assertion in validation (spec 15.5). The capitalisation field is a human-readable description of that string, never a substitute for it.",
+    "name_is_not_mark": "canonical_brand_name is a TEXT STRING and may be typeset in original compositions. brand_mark_assets are FILES and are the only permitted source of official logo usage. These are different things and must never be substituted for one another. See D-17.",
+    "identity_is_context_not_recipe": "identity_observations describes the existing identity for creative context only. It is NOT a specification for reconstructing, tracing, redrawing or approximating the official brand mark, and must never be used as one."
+  },
+
+  "identity": {
+    "canonical_brand_name": "THE INCREDIBLE YOU",
+    "canonical_brand_name_source": "product owner, 2026-08-16",
+    "canonical_brand_name_usage": "May be typeset as exact text in original typographic merchandise compositions. Doing so does not constitute official logo usage.",
+
+    "brand_mark_assets": [],
+    "brand_mark_assets_status": "NOT SUPPLIED. No authoritative production logo files have been provided. Screenshots are not authoritative assets.",
+    "brand_mark_reconstruction": "PROHIBITED. The official logo/wordmark must never be reconstructed, traced, redrawn, approximated or generated from screenshots or from any description in this file.",
+
+    "identity_observations": {
+      "_purpose": "Creative context only. Not a reconstruction specification. See _schema_notes.identity_is_context_not_recipe.",
+      "_source": "product owner description, 2026-08-16",
+      "observations": [
+        "strong uppercase typography",
+        "THE / INCREDIBLE as a dominant typographic structure",
+        "YOU as a major visual element",
+        "red as an important existing brand colour",
+        "a human figure integrated into the identity",
+        "used both black-on-transparent/light and white-on-coloured-background"
+      ]
+    },
+
+    "colours": [
+      {
+        "name": "brand red",
+        "hex": null,
+        "hex_status": "UNKNOWN. Must be supplied by the product owner from authoritative brand assets. Must not be sampled, estimated or eyedropped from screenshots.",
+        "role": "important existing brand colour",
+        "source": "product owner, 2026-08-16"
+      }
+    ],
+
+    "usage_tiers": [
+      {
+        "id": "official_logo",
+        "description": "Reproduction of the official brand mark.",
+        "requires": "A supplied authoritative logo asset file.",
+        "generation_rule": "Asset is PLACED, never generated, traced or approximated. See D-17.",
+        "currently_available": false,
+        "blocked_reason": "No authoritative logo asset supplied."
+      },
+      {
+        "id": "brand_inspired",
+        "description": "Original merchandise composition that belongs recognisably to the brand.",
+        "requires": "Nothing beyond approved vocabulary and creative territory.",
+        "generation_rule": "May typeset canonical_brand_name and approved vocabulary as exact text via deterministic typography. Must not reproduce or approximate the official mark.",
+        "currently_available": true
+      },
+      {
+        "id": "campaign",
+        "description": "Merchandise for a specific programme or campaign.",
+        "requires": "Approved vocabulary for the relevant programme.",
+        "generation_rule": "As brand_inspired. Programme association must come from Brand DNA, never inferred.",
+        "currently_available": true
+      },
+      {
+        "id": "universe_original",
+        "description": "New creative treatment belonging to The Incredible You universe without reproducing brand marks or necessarily using the brand name.",
+        "requires": "Creative territory only.",
+        "generation_rule": "Fully original. No mark reproduction.",
+        "currently_available": true
+      }
+    ]
+  },
+
+  "creative_territory": {
+    "_source": "product owner, 2026-08-16",
+    "_note": "Reference images supplied by the product owner are inspiration for composition and style diversity ONLY. No supplied artwork may be reproduced, traced, imitated or derived from.",
+    "themes": [
+      "motivational typography",
+      "strong headline-led compositions"
+    ],
+    "composition": [
+      "mixed typography styles",
+      "bold colour contrasts",
+      "typography combined with simple illustrations/symbols",
+      "occasional more graphic/art-led designs"
+    ],
+    "registers": [
+      "restrained premium",
+      "louder streetwear"
+    ],
+    "garments": [
+      "black",
+      "white"
+    ],
+    "output_character": "clean standalone artwork suitable for transfer printing"
+  },
+
+  "vocabulary": [
+    {
+      "id": "inner-dna",
+      "canonical_name": "Inner DNA",
+      "exact_spelling": "Inner DNA",
+      "capitalisation": "Two words. Initial capital on 'Inner'; 'DNA' fully uppercase.",
+      "status": "approved",
+      "meaning": null,
+      "meaning_source": null,
+      "programme": null,
+      "related_terms": [],
+      "approved_usage": null,
+      "restricted_usage": null,
+      "merch_relevance": null,
+      "creative_notes": null,
+      "source_ref": null,
+      "added": "2026-08-16"
+    },
+    {
+      "id": "baselines",
+      "canonical_name": "Baselines",
+      "exact_spelling": "Baselines",
+      "capitalisation": "Single word. Initial capital.",
+      "status": "approved",
+      "meaning": null,
+      "meaning_source": null,
+      "programme": null,
+      "related_terms": [],
+      "approved_usage": null,
+      "restricted_usage": null,
+      "merch_relevance": null,
+      "creative_notes": null,
+      "source_ref": null,
+      "added": "2026-08-16"
+    },
+    {
+      "id": "n-codes",
+      "canonical_name": "N-Codes",
+      "exact_spelling": "N-Codes",
+      "capitalisation": "Hyphenated. Uppercase 'N', hyphen, initial capital 'C', lowercase 'odes'.",
+      "status": "approved",
+      "meaning": null,
+      "meaning_source": null,
+      "programme": null,
+      "related_terms": [],
+      "approved_usage": null,
+      "restricted_usage": null,
+      "merch_relevance": null,
+      "creative_notes": null,
+      "source_ref": null,
+      "added": "2026-08-16"
+    },
+    {
+      "id": "e-codes",
+      "canonical_name": "E-Codes",
+      "exact_spelling": "E-Codes",
+      "capitalisation": "Hyphenated. Uppercase 'E', hyphen, initial capital 'C', lowercase 'odes'.",
+      "status": "approved",
+      "meaning": null,
+      "meaning_source": null,
+      "programme": null,
+      "related_terms": [],
+      "approved_usage": null,
+      "restricted_usage": null,
+      "merch_relevance": null,
+      "creative_notes": null,
+      "source_ref": null,
+      "added": "2026-08-16"
+    },
+    {
+      "id": "outcomes-plus",
+      "canonical_name": "Outcomes Plus",
+      "exact_spelling": "Outcomes Plus",
+      "capitalisation": "Two words. Initial capital on both.",
+      "status": "approved",
+      "meaning": null,
+      "meaning_source": null,
+      "programme": null,
+      "related_terms": [],
+      "approved_usage": null,
+      "restricted_usage": null,
+      "merch_relevance": null,
+      "creative_notes": null,
+      "source_ref": null,
+      "added": "2026-08-16"
+    },
+    {
+      "id": "secret-millionaire-blueprint",
+      "canonical_name": "Secret Millionaire Blueprint",
+      "exact_spelling": "Secret Millionaire Blueprint",
+      "capitalisation": "Three words. Initial capital on each.",
+      "status": "approved",
+      "meaning": null,
+      "meaning_source": null,
+      "programme": null,
+      "related_terms": [],
+      "approved_usage": null,
+      "restricted_usage": null,
+      "merch_relevance": null,
+      "creative_notes": null,
+      "source_ref": null,
+      "added": "2026-08-16"
+    }
+  ],
+
+  "ingestion": {
+    "status": "NOT BUILT — deferred by D-15.",
+    "required_future_workflow": [
+      "source material",
+      "candidate extraction",
+      "product-owner review",
+      "approved Brand Vocabulary"
+    ],
+    "rule": "Extraction must never automatically convert discovered terminology into approved Brand DNA. Extracted entries enter this file with status='candidate' and a populated source_ref, and remain unusable until the product owner sets status='approved'.",
+    "schema_readiness": "The status and source_ref fields exist from schema_version 1 specifically so that adding ingestion later is a filter, not a migration."
+  }
+}

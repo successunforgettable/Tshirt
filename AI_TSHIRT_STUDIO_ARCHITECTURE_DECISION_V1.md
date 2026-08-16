@@ -1,10 +1,14 @@
 # AI T-Shirt Studio — Architecture Decision Record V1
 
 **Document:** `AI_TSHIRT_STUDIO_ARCHITECTURE_DECISION_V1.md`
-**Version:** 1.0
+**Version:** 1.1 — extended at Gate 0.5 (Brand Baseline)
 **Status:** Locked. Supersedes candidate selections in Technical Specification V1.0 §41.
 **Date:** 2026-08-16
-**Basis:** Gate 0 read-only environment and architecture audit, accepted as PASS WITH CHANGES.
+**Basis:** Gate 0 read-only environment and architecture audit, accepted as PASS WITH CHANGES; extended by
+the Gate 0.5 Brand DNA delta review, accepted with the name-is-not-mark correction.
+
+**Gate 0.5 additions:** evidence E6–E7; decisions **D-15**, **D-16**, **D-17**; amendments to **D-06**,
+**D-09**, **D-10**. **No Gate 0 decision was reversed or weakened.**
 
 ---
 
@@ -70,6 +74,42 @@ substitution, cited as the most common cause of a transfer that arrives "almost 
 
 > These are industry conventions, not a substitute for the actual printer's answers. They inform the
 > questions in `PRINTER_REQUIREMENTS_CHECKLIST.md`; the printer's replies are authoritative.
+
+### E6 — Printer statement (product owner, 2026-08-16)
+
+The printer stated: **"PNG without background."**
+
+Treated as confirmed evidence for **exactly two** facts: PNG is accepted/required, and a transparent
+background is required.
+
+**Nothing further is inferred from it** — not DPI, colour profile, mirroring, maximum dimensions, minimum
+feature size, or transfer technology. Note that the two confirmed fields are among the *least*
+consequential in the profile; every field that gates the validator remains open, so
+`PRINTER_REQUIREMENTS_CHECKLIST.md` remains blocking (**D-11**).
+
+### E7 — Brand DNA (product owner, 2026-08-16)
+
+The creative target is merchandise for **The Incredible You**, not a generic AI T-shirt generator.
+
+Supplied: canonical brand name; identity observations (strong uppercase typography; THE / INCREDIBLE as a
+dominant typographic structure; YOU as a major visual element; red as an important brand colour; a human
+figure integrated into the identity; black-on-light and white-on-coloured usages); creative territory
+(motivational typography, headline-led composition, mixed type styles, bold contrast, typography with
+simple illustration, occasional art-led work, black/white garments, restrained-premium through
+loud-streetwear registers); and four usage tiers.
+
+Six proprietary vocabulary terms supplied **by name only**: `Inner DNA`, `Baselines`, `N-Codes`,
+`E-Codes`, `Outcomes Plus`, `Secret Millionaire Blueprint`. **Meanings were explicitly not supplied and
+must not be inferred.**
+
+Two explicit constraints recorded by the product owner:
+
+1. Reference images are inspiration for composition and style diversity only. Supplied artwork must never
+   be reproduced, traced, imitated or derived from.
+2. **Screenshots are not authoritative production logo files.** The canonical brand *name* is a text
+   string and is usable; the official brand *mark* requires a supplied asset file and must never be
+   reconstructed from screenshots. The brand red hex is unknown and must not be sampled or estimated from
+   screenshots.
 
 ---
 
@@ -188,6 +228,13 @@ the UI.
 **Rejected.** Specification V1.0's softer "should support recreating or overlaying" — it permits the
 failure it was written to prevent.
 
+**Amended 2026-08-16 (Gate 0.5) — IP rationale.** E7 supplies a second and stronger justification. Terms
+such as `N-Codes`, `E-Codes` and `Inner DNA` are structurally hostile to image models: hyphens, internal
+capitalisation and plurals are the first things diffusion text rendering degrades. `N-Codes` becomes
+`N Codes`, `NCodes`, `N-Code`. That is not a typo — it is **corruption of proprietary terminology**, made
+physical and permanent on merchandise. D-06 is therefore no longer only a cost control; it is an IP
+control. The **D-10 amendment** makes the correctness of these strings machine-checkable.
+
 **Revisit when.** Never. This is the single highest-value rule in the specification.
 
 ---
@@ -242,6 +289,10 @@ taken at Gate 0.**
 **Rejected.** Building it "in case" — the quality guard alone is hard to make reliable, and would be built
 against no known consumer.
 
+**Strengthened 2026-08-16 (Gate 0.5).** E6 — the printer's "PNG without background" — confirms a raster,
+transparency-consuming workflow and offers no indication of a vector requirement. D-09 rests on better
+evidence than when it was taken.
+
 **Revisit when.** `PRINTER_REQUIREMENTS_CHECKLIST.md` returns a vector format as accepted or preferred, or
 scope extends to screen printing, vinyl or embroidery. VTracer (MIT, E3) is then the starting candidate.
 
@@ -264,6 +315,15 @@ physics*:
   rescaling before it reaches film.
 
 **Thresholds come from measured Gate 1 calibration data**, never from assumption.
+
+**Amended 2026-08-16 (Gate 0.5) — canonical-string assertion.** Validation additionally asserts that
+composited authoritative text **byte-matches** the `exact_spelling` recorded in Brand DNA (**D-15**).
+
+*Why this is now possible and was not before:* Brand Vocabulary supplies an authoritative string to
+compare against. Before E7 there was no canonical form to assert on, so wording correctness rested on
+human proofreading. It is a pure function over two strings — no I/O, no model, negligible cost — and it
+converts the highest-severity IP risk in the system (**D-06**) from a discipline into a machine check that
+fails closed.
 
 **Revisit when.** Calibration or production experience reveals further physical failure modes. Expect this
 list to grow — that growth is the system learning.
@@ -331,6 +391,95 @@ lines carrying the project's entire correctness burden.
 
 ---
 
+### D-15 — Brand DNA is versioned data, not code
+
+**Decided.** Brand identity, creative territory and Brand Vocabulary live in a versioned data file in the
+repository (`brand/the-incredible-you.json`), loaded by the brief layer. The schema carries `status` and
+`source_ref` **from schema_version 1**. Ingestion is not built.
+
+**Why decide now rather than later.** Three concrete rework risks, not convenience:
+
+1. The structured-brief schema is already declared versioned and consumed by downstream code (spec §7).
+   Adding brand fields later is a migration against existing briefs and provenance records.
+2. Validation now depends on canonical strings (**D-10 amendment**) — a hard data dependency from the most
+   correctness-critical module into Brand DNA.
+3. Approval is a *lifecycle*, not a flag. The required workflow is
+   `source → candidate → owner review → approved`. Without `status` and `source_ref` at v1, every future
+   ingestion feature must retrofit approval state and provenance onto records that never had either — and
+   there would be no source data to backfill from. Two fields now; an unbackfillable migration later.
+
+**Infrastructure added: none.** One JSON file. No database, no index, no embeddings, no retrieval service,
+no review UI. With six terms the vocabulary fits comfortably in context — **loading the file is the
+implementation.** Any future proposal for a vector store over this data must justify itself against
+**D-12**.
+
+**Not built (deferred).** Document ingestion, candidate extraction, parsing, semantic search, review
+tooling. The workflow is *documented as required* and *structurally supported*; it is not implemented.
+Extracted candidates enter the same file with `status: "candidate"` and are unusable until the product
+owner promotes them.
+
+**Status semantics.** `status` approves **the term and its spelling**, not its meaning. A term may be
+`approved` while `meaning` is `null`: the string is authoritative and printable, its meaning unknown.
+
+**Revisit when.** Vocabulary outgrows what fits comfortably in context, or ingestion volume makes manual
+review impractical.
+
+---
+
+### D-16 — Vocabulary with unknown meaning is exact but opaque
+
+**Decided.** Where a vocabulary entry's `meaning` is `null`, the term **may be used as exact text** and set
+in brand typography. It **must not drive visual metaphor, symbolism, or illustrative concept.**
+
+**Why.** This closes a failure mode that no text rule catches. Spec §7 instructs the Creative Director to
+determine "visual metaphors". Asked for a design around `N-Codes` — meaning unknown — a model will happily
+produce a DNA helix, a padlock, or binary rain. **It has then invented a meaning and printed it.** No false
+definition was ever typed, so **D-06** is satisfied and the term is spelled perfectly; a visual claim about
+proprietary IP has nonetheless been manufactured and made physical.
+
+Spelling a term correctly while illustrating it wrongly is arguably the worse outcome, because the result
+looks authoritative.
+
+**Consequence.** "Give me five designs around N-Codes" currently yields five *typographic* treatments of a
+correctly spelled term — genuinely different in weight, scale, structure, contrast and composition. It does
+not yield five interpretations of what N-Codes means. This sits comfortably with the creative territory in
+E7, which is typography-dominant by nature.
+
+**Note.** Meaning must come from product-owner material only. A model must never infer meaning, programme
+ownership, relationships, approved usage or symbolism from a term's surface form.
+
+**Revisit when.** Per term, automatically, the moment the product owner supplies `meaning`. Illustrative
+territory then unlocks for that term with no code change.
+
+---
+
+### D-17 — Brand marks are placed assets, never generated; the name is not the mark
+
+**Decided.** Two distinct things, never substituted for one another:
+
+- **Canonical brand name** — the text string `THE INCREDIBLE YOU`. May be typeset as exact text in original
+  merchandise compositions via deterministic typography. **Doing so is not official logo usage.**
+- **Official brand mark** — a supplied authoritative asset file. Required for `usage_tier: official_logo`.
+  **Placed, never generated.**
+
+**Prohibited.** Reconstructing, tracing, redrawing, approximating or generating the official logo — from
+screenshots, from descriptions, or from the `identity_observations` recorded in Brand DNA. Screenshots
+demonstrate identity and creative context; **they are not authoritative production assets** (E7).
+
+`identity_observations` exists for creative context and is explicitly **not** a reconstruction
+specification. It is marked as such in the data file.
+
+**Why.** This is **D-06**'s logic applied to marks rather than words. A model redrawing a wordmark produces
+a *near-miss* — subtly wrong letterforms, proportions and spacing — which is more dangerous than an obvious
+failure, because a near-miss ships. The same applies to the human-figure element of the identity.
+
+**Current state.** `brand_mark_assets` is empty. **`official_logo` is unavailable until authoritative files
+are supplied.** The other three tiers are available now.
+
+**Revisit when.** Never as a principle. `official_logo` unblocks when assets are supplied.
+
+---
+
 ## Decision Index
 
 | ID | Decision | Reversal trigger |
@@ -349,6 +498,12 @@ lines carrying the project's entire correctness burden.
 | D-12 | No queue/DB server/microservices | Real concurrency or multi-user need |
 | D-13 | Durable evidence per gate | Persistent runtime adopted |
 | D-14 | Python, I/O-free core | None for the core |
+| D-15 | Brand DNA is versioned data, not code | Vocabulary outgrows context |
+| D-16 | Unknown meaning → exact text, no visual metaphor | Product owner supplies meaning (per term) |
+| D-17 | Brand marks are placed assets; name ≠ mark | Never as principle; `official_logo` unblocks on assets |
+
+**Amendments (Gate 0.5, 2026-08-16):** D-06 gains the IP rationale · D-09 strengthened by E6 · D-10 gains
+the canonical-string assertion.
 
 ---
 
