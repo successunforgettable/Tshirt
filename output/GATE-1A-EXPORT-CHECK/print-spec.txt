@@ -1,0 +1,23 @@
+PRINT SPECIFICATION
+
+Process: DTF transfer
+
+FILE
+  Filename    : export-check-v1.png
+  Print size  : 160.0 mm wide x 135.2 mm high
+  Pixels      : 1890 x 1597
+  Resolution  : 300 DPI at the size above
+  Colour      : RGB / sRGB, 8-bit
+  Background  : fully transparent PNG
+  SHA-256     :
+    c4055e7d5fdf9aab2977079e00be26a0b84ef6eb70fc6fcdb670452ded09a371
+
+PLEASE NOTE
+  1. Print at exactly the stated physical size. DO NOT RESIZE.
+  2. Supplied in normal reading orientation - please handle DTF
+     production orientation as you normally would.
+
+This is a one-off check that our export software is producing files at
+the correct physical size. Nothing unusual is needed at your end.
+
+End of specification.

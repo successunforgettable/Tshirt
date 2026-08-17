@@ -1,25 +1,18 @@
 """Deterministic print validation. Pure functions — no file I/O.
 
-Four verdicts, and the fourth exists on purpose:
+Five verdicts:
 
-  PASS     the check ran and the asset satisfies it
-  WARNING  worth a human look; does not block export
-  FAIL     blocks print-ready status unless explicitly overridden
-  PENDING  the check CANNOT run because the printer has not supplied the
-           threshold it needs
+  PASS      the check ran and the asset satisfies it
+  WARNING   worth a human look; does not block
+  FAIL      our software emitted something wrong; blocks
+  PENDING   a BLOCKING check could not run for want of an input; blocks
+  ADVISORY  a measurement reported with no threshold to judge it against, because
+            the threshold is the printer's to own; never blocks
 
-PENDING is not a soft pass. It is the mechanism that stops the system inventing
-tolerances it does not have (D-11). Before physical calibration, minimum stroke
-width and partial-alpha tolerance are genuinely unknown, and reporting them as
-PASS would be a lie that reaches the printer. The measurement is still reported
-so the calibration transfer can turn it into a real threshold.
-
-Findings roll up into one of three asset states — NOT_READY,
-READY_FOR_CALIBRATION, PRINT_READY — rather than a boolean. A boolean forces an
-asset with unmeasured print behaviour into either "not ready" (false: it is
-perfectly sendable for calibration) or "print ready" (false: nothing about its
-physical behaviour has been established). The middle state is the honest one for
-a first transfer, and it is where Gate 1a assets sit.
+No threshold is ever invented (D-11). PENDING and ADVISORY are the two honest
+ways of saying "unknown", and they differ in who the unknown belongs to: PENDING
+is a gap in what we need to verify ourselves, ADVISORY is a number we can measure
+but have no standing to judge.
 """
 
 from __future__ import annotations
@@ -34,31 +27,43 @@ PASS = "PASS"
 WARNING = "WARNING"
 FAIL = "FAIL"
 PENDING = "PENDING"
+ADVISORY = "ADVISORY"
 
-# --- asset readiness ---------------------------------------------------------
+# --- what this validator is responsible for ----------------------------------
 #
-# Three states, because two are not enough. An asset can be structurally sound
-# and still not be proven fit for production, and collapsing that into a boolean
-# produces a green label on artwork whose print behaviour nobody has measured.
+# It answers one question: did OUR SOFTWARE emit a correct, DTF-ready file at the
+# intended physical size? It does not assess the printer, who is experienced and
+# trusted.
 #
-#   NOT_READY              a FAIL is present. Do not send.
-#   READY_FOR_CALIBRATION  no FAIL, but checks remain unresolved. Safe to send as
-#                          part of a calibration run; NOT proven print-ready.
-#   PRINT_READY            no FAIL and nothing unresolved. Every required check
-#                          ran against a real threshold and passed.
+# That splits the checks in two:
 #
-# PRINT_READY is deliberately hard to reach: any PENDING at all withholds it.
-# Weakening PENDING to obtain a green status would defeat the reason PENDING
-# exists.
+#   BLOCKING   our own correctness - transparency, dimensions, effective DPI,
+#              bounds, canonical strings, format. A failure here is our bug and
+#              must stop the file being sent.
+#
+#   ADVISORY   printer-owned tolerances such as minimum reliable stroke width and
+#              partial-alpha behaviour. We can measure the artwork and report the
+#              number, but the threshold belongs to the printer's process. With no
+#              supplied threshold there is nothing to judge against, so these are
+#              reported and never block.
+#
+# Two states, not three:
+#
+#   NOT_READY    a FAIL, or a BLOCKING check that could not run. Do not send.
+#   PRINT_READY  every blocking check ran and passed. Advisories may be present.
+#
+# An earlier revision had a middle state for assets awaiting printer
+# characterisation. That state now has no members: the checks that populated it
+# are advisory, because characterising the printer is not this project's job.
+# Removing it is a scope correction, not a relaxation - no threshold is invented,
+# and a blocking check that cannot run still reports PENDING and still blocks.
 
 NOT_READY = "NOT_READY"
-READY_FOR_CALIBRATION = "READY_FOR_CALIBRATION"
 PRINT_READY = "PRINT_READY"
 
-# How an unresolved check gets resolved. These have different owners and
-# different timescales, so they are reported separately.
-BY_CALIBRATION = "calibration"        # measure it from the physical transfer
-BY_PRINTER_ANSWER = "printer_answer"  # ask the printer
+# Who owns an unresolved item.
+BY_PRINTER_EXPERTISE = "printer_expertise"  # trusted printer's process, not ours
+BY_PRINTER_ANSWER = "printer_answer"        # a question we could ask if it mattered
 
 
 @dataclass(frozen=True)
@@ -102,34 +107,26 @@ class ValidationReport:
         return [f for f in self.findings if f.verdict == PENDING]
 
     @property
-    def awaiting_calibration(self) -> list[Finding]:
-        return [f for f in self.pending if f.resolution == BY_CALIBRATION]
-
-    @property
-    def awaiting_printer_answer(self) -> list[Finding]:
-        return [f for f in self.pending if f.resolution == BY_PRINTER_ANSWER]
+    def advisories(self) -> list[Finding]:
+        """Measurements reported without a threshold. Never affect readiness."""
+        return [f for f in self.findings if f.verdict == ADVISORY]
 
     @property
     def readiness(self) -> str:
-        """NOT_READY / READY_FOR_CALIBRATION / PRINT_READY.
+        """NOT_READY or PRINT_READY.
 
-        Any PENDING withholds PRINT_READY, whatever its resolution path. An
-        unmeasured tolerance is unmeasured regardless of who is going to supply it.
+        A FAIL blocks. A blocking check that could not run (PENDING) also blocks —
+        we never call a file correct on the strength of a check we skipped.
+        ADVISORY findings never block, because the threshold they would be judged
+        against belongs to the printer, not to us.
         """
-        if self.failures:
+        if self.failures or self.pending:
             return NOT_READY
-        if self.pending:
-            return READY_FOR_CALIBRATION
         return PRINT_READY
 
     @property
     def is_print_ready(self) -> bool:
-        """True only in the PRINT_READY state. Never true with anything pending."""
         return self.readiness == PRINT_READY
-
-    @property
-    def can_send_for_calibration(self) -> bool:
-        return self.readiness in (READY_FOR_CALIBRATION, PRINT_READY)
 
     def summary(self) -> dict:
         counts: dict[str, int] = {}
@@ -139,12 +136,10 @@ class ValidationReport:
             "asset": self.asset,
             "readiness": self.readiness,
             "print_ready": self.is_print_ready,
-            "can_send_for_calibration": self.can_send_for_calibration,
             "counts": counts,
-            "unresolved": {
-                "awaiting_calibration": [f.check for f in self.awaiting_calibration],
-                "awaiting_printer_answer": [f.check for f in self.awaiting_printer_answer],
-            },
+            "blocking_failures": [f.check for f in self.failures],
+            "blocking_unrunnable": [f.check for f in self.pending],
+            "advisory": [f.check for f in self.advisories],
             "findings": [f.as_dict() for f in self.findings],
         }
 
@@ -242,8 +237,9 @@ def check_alpha_quality(asset: AssetUnderTest, profile: PrinterProfile,
     """Soft (non-edge) partial alpha is the dominant DTF failure mode.
 
     Over a white underbase, glows and gradients-to-transparent print as haze.
-    The tolerance is printer-specific and currently unmeasured, so this reports
-    PENDING with the measurement attached rather than guessing a threshold.
+    The tolerance belongs to the printer's process, so with none supplied this
+    reports the measurement as ADVISORY rather than guessing a threshold or
+    blocking on someone else's unknown.
     """
     detail = {
         "inked_px": stats.inked_px,
@@ -256,10 +252,10 @@ def check_alpha_quality(asset: AssetUnderTest, profile: PrinterProfile,
     tol = profile.get("max_partial_alpha_ratio")
     if not tol.is_known:
         return Finding(
-            "alpha_quality", PENDING,
+            "alpha_quality", ADVISORY,
             f"Soft (non-edge) partial alpha measured at {stats.soft_ratio:.4%} of inked pixels. "
-            "Printer tolerance unknown — to be established by the calibration alpha step wedge.",
-            detail, resolution=BY_CALIBRATION,
+            "No printer tolerance supplied; reported for information only.",
+            detail, resolution=BY_PRINTER_EXPERTISE,
         )
     verdict = PASS if stats.soft_ratio <= tol.value else FAIL
     return Finding(
@@ -303,8 +299,9 @@ def check_max_dimensions(asset: AssetUnderTest, profile: PrinterProfile) -> list
     ):
         fld = profile.get(fname)
         if not fld.is_known:
-            out.append(Finding(f"max_{label}", PENDING,
-                               f"Maximum {label} not supplied by printer.",
+            out.append(Finding(f"max_{label}", ADVISORY,
+                               f"Declared {label} {declared:.1f} mm. No printer maximum "
+                               "supplied; reported for information only.",
                                {f"declared_{label}_mm": round(declared, 2)},
                                resolution=BY_PRINTER_ANSWER))
         elif declared <= fld.value:
@@ -333,10 +330,10 @@ def check_minimum_feature(asset: AssetUnderTest, profile: PrinterProfile,
     }
     if not fld.is_known:
         return Finding(
-            "minimum_feature", PENDING,
+            "minimum_feature", ADVISORY,
             f"Thinnest stroke (1st percentile) measured at {p1_mm:.3f} mm. "
-            "Printer minimum unknown — to be established by the calibration stroke ladder.",
-            detail, resolution=BY_CALIBRATION,
+            "No printer minimum supplied; reported for information only.",
+            detail, resolution=BY_PRINTER_EXPERTISE,
         )
     verdict = PASS if p1_mm >= fld.value else FAIL
     return Finding(

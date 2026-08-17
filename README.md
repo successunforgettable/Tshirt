@@ -15,8 +15,12 @@ and heat press. **Physical print quality is the acceptance criterion, not screen
 
 ## Gate status
 
-**Gate 1a: SOFTWARE READY — AWAITING PHYSICAL VALIDATION.**
-Not PASS until a transfer has been printed, pressed and measured.
+**Gate 1a: READY FOR PHYSICAL EXPORT CHECK.**
+
+Gate 1a proves our software emits a correct DTF-ready file at the intended physical size.
+It does not characterise the printer, who is experienced and trusted, and it has no
+aesthetic criterion. One artefact goes out: `export-check-v1.png`, 160.0 x 135.2 mm.
+Gate 1b owns the first wearable design.
 
 ## Setup
 
@@ -36,18 +40,23 @@ rather than a model.
 .venv/bin/python -m tshirt.cli.main build
 ```
 
-Writes `output/INCREDIBLE-YOU-001/` — two PNGs, a human-readable print spec, a manifest
-with checksums, and a validation report. Exits non-zero only on `NOT_READY`.
+Writes `output/GATE-1A-EXPORT-CHECK/` — the export-check PNG, a short print spec, a
+manifest with checksums, and a validation report. Exits non-zero only on `NOT_READY`.
 
-Assets roll up to one of three states rather than a boolean:
+`--diagnostic` additionally emits the full calibration sheet and the deterministic
+pipeline-test design into `DIAGNOSTIC/`. Neither runs in the default path.
+
+Two states:
 
 | State | Meaning |
 |---|---|
-| `NOT_READY` | A FAIL is present. Do not send. |
-| `READY_FOR_CALIBRATION` | No FAIL, but checks remain unresolved. Sendable as part of a calibration run; **not** proven print-ready. |
-| `PRINT_READY` | No FAIL and nothing unresolved. Every required check ran against a real threshold and passed. |
+| `NOT_READY` | A FAIL, or a blocking check that could not run. Do not send. |
+| `PRINT_READY` | Every blocking check ran and passed. |
 
-Gate 1a assets are `READY_FOR_CALIBRATION`. Any single PENDING withholds `PRINT_READY`.
+Blocking checks cover **our** correctness — transparency, dimensions, effective DPI,
+bounds, canonical strings, format. Printer-owned tolerances such as minimum stroke width
+and partial-alpha behaviour are reported as **advisory**: measured and recorded, never
+judged against a threshold nobody supplied, and never blocking.
 
 ## Test
 

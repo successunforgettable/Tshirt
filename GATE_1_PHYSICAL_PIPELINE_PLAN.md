@@ -1,14 +1,15 @@
 # Gate 1 — Physical Pipeline Proof Plan
 
 **Document:** `GATE_1_PHYSICAL_PIPELINE_PLAN.md`
-**Version:** 1.1 — subject updated at Gate 0.5
+**Version:** 3.0 — Gate 1a narrowed to export validation; Gate 1b owns product value
 **Status:** Approved plan. **Not yet executed.**
 **Date:** 2026-08-16
 **Depends on:** `AI_TSHIRT_STUDIO_TECHNICAL_SPEC_V1.md` (v1.2), `AI_TSHIRT_STUDIO_ARCHITECTURE_DECISION_V1.md` (v1.1), `PRINTER_REQUIREMENTS_CHECKLIST.md`, `brand/the-incredible-you.json`
 
-> **Gate 0.5 changes:** the test *subject* changed from a generic concept to real brand work; the calibration
-> sheet gained brand red and IP string-fidelity probes; validation gained the canonical-string assertion.
-> **Structure, stage count and scope are unchanged** — Gate 1 remains a single fixed physical-pipeline proof.
+> **v3.0 change.** Gate 1 is split, and Gate 1a is narrowed. The printer is experienced and
+> trusted, so Gate 1a no longer characterises their process — it proves only that **our
+> software emits a correct DTF-ready file at the intended physical size**. Everything of
+> product value moves to Gate 1b. See §2.
 
 ---
 
@@ -46,26 +47,68 @@ deviations from the digital file are **understood and attributable**.
 
 ---
 
-## 2. Exit Criteria
+## 2. Gate 1a / 1b boundary
 
-Gate 1 is complete when **all** hold:
+| Gate | Proves | Acceptance |
+|---|---|---|
+| **1a** | Our software emits a correct DTF-ready file at the intended physical size | Objective, measurable with a ruler in five minutes |
+| **1b** | The system can author a genuinely wearable design | Product-owner creative judgement |
 
-1. ≥1 heat-pressed T-shirt judged physically acceptable.
-2. The result is **reproduced** on a second press — a single good shirt can be luck.
-3. A printer profile exists, populated from the printer's own answers **and** from measured calibration
-   data.
-4. Measured values for **minimum reliable stroke width** and **partial-alpha behaviour** are recorded and
-   encoded as validator thresholds (spec §15.2, §15.3).
-5. **Proprietary terminology survived the transfer with exact spelling** — hyphens and capitalisation
-   intact — with the smallest reliable size recorded per term (spec §15.5, **D-06**).
-6. Every deviation between the digital file and the physical shirt is either explained or explicitly
-   logged as unexplained.
-7. All evidence exists **outside** the engineering environment (**D-13**).
+### Why Gate 1a is this small
 
-Failing to produce an acceptable shirt is **not** a failed gate, provided the cause is identified. An
-unexplained failure is a failed gate.
+Two corrections got it here.
 
----
+First, the aesthetic criterion was removed: a deterministic rendering engine produces
+layout, not design. Judging the pipeline by artwork it was never built to author would
+have told us nothing about either.
+
+Second, the printer characterisation was removed. The printer is experienced and trusted
+and knows how to make good DTF transfers. Measuring their minimum stroke width, underbase
+behaviour and colour response was solving a problem we do not have. What we genuinely
+cannot know without a physical check is whether **our own export** is right — correct
+scale, correct DPI interpretation, intact alpha, not mirrored, not cropped, not corrupted
+in transit.
+
+That question needs one small artefact and a ruler.
+
+## 2.1 Gate 1a PASS criteria
+
+**Software** (verified before sending):
+
+1. Transparent RGBA PNG with real alpha and no accidental opaque plane
+2. Declared physical dimensions derived from actual pixels, matching `ceil(mm/25.4 x dpi)`
+3. Effective DPI computed, not read from metadata
+4. Ink extends to the declared bounds; nothing silently cropped
+5. Authoritative strings byte-match Brand DNA
+6. Validator returns **PRINT_READY** — no FAIL, no unrunnable blocking check
+7. Manifest records exact dimensions, DPI and SHA-256
+
+**Physical** (measured on the film, or on scrap if genuinely ambiguous):
+
+8. Horizontal 100 mm reference measures 100 ± 1 mm
+9. Vertical 100 mm reference measures 100 ± 1 mm
+10. Overall dimensions match the manifest; registration marks present at all four corners
+11. Orientation correct for final application
+12. Nothing missing, cropped or corrupted versus the source PNG
+13. Transparent areas printed no ink
+
+All thirteen → Gate 1a **PASSES**.
+
+**No tolerance measurement. No repeatability. No aesthetic judgement. No garment press
+required.**
+
+## 2.2 Gate 1b scope (not started)
+
+Gate 1b is where the product value is:
+
+- **Creative Director** (spec §7) — typographic hierarchy, deliberate scale contrast,
+  mixed treatments, negative-space control
+- **The Incredible You Brand DNA** driving composition
+- **Richer deterministic design vocabulary** — graphic devices, framing, shapes
+- **Generated or supplied illustrative elements**
+- **Conversational refinement**
+- **First genuinely wearable design**, exported through the production engine Gate 1a
+  proved correct
 
 ## 3. Stages
 

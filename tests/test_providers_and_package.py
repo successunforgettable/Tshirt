@@ -154,9 +154,8 @@ class TestPrintSpecPortability(unittest.TestCase):
             p = package.save_png(Image.new("RGBA", (100, 100)), Path(td) / "a.png", 300)
             asset = package.describe_asset(p, "production", 8.47, 8.47, 300)
             spec = package.write_print_spec(
-                Path(td) / "print-spec.txt", asset, asset,
+                Path(td) / "print-spec.txt", [asset],
                 load_profile(ROOT / "profiles" / "dtf-printer-a.json"),
-                {"type": "T-shirt", "colour": "black", "size": "M"},
                 [ValidationReport(asset="a.png")],
             )
             raw = spec.read_bytes()
@@ -176,9 +175,8 @@ class TestPrintSpecPortability(unittest.TestCase):
             p = package.save_png(Image.new("RGBA", (100, 100)), Path(td) / "a.png", 300)
             asset = package.describe_asset(p, "production", 8.47, 8.47, 300)
             spec = package.write_print_spec(
-                Path(td) / "print-spec.txt", asset, asset,
+                Path(td) / "print-spec.txt", [asset],
                 load_profile(ROOT / "profiles" / "dtf-printer-a.json"),
-                {"type": "T-shirt", "colour": "black", "size": "M"},
                 [ValidationReport(asset="a.png")],
             )
             for i, line in enumerate(spec.read_text().splitlines(), 1):
@@ -188,3 +186,49 @@ class TestPrintSpecPortability(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSendSetIsExplicit(unittest.TestCase):
+    """Only files actually being printed may appear in the printer's instructions."""
+
+    def _assets(self, td):
+        from tshirt.core.profile import load_profile
+        p = package.save_png(Image.new("RGBA", (10, 10)), Path(td) / "export-check-v1.png", 300)
+        q = package.save_png(Image.new("RGBA", (10, 10)), Path(td) / "pipeline-test-design.png", 300)
+        return (package.describe_asset(p, "export_check", 160.0, 135.2, 300),
+                package.describe_asset(q, "pipeline_test_artefact", 280.1, 270.0, 300),
+                load_profile(ROOT / "profiles" / "dtf-printer-a.json"))
+
+    def test_only_listed_assets_appear(self):
+        from tshirt.core.validate import ValidationReport
+        with tempfile.TemporaryDirectory() as td:
+            send, not_sent, profile = self._assets(td)
+            text = package.write_print_spec(
+                Path(td) / "spec.txt", [send], profile,
+                [ValidationReport(asset="export-check-v1.png")]).read_text()
+            self.assertIn("export-check-v1.png", text)
+            self.assertNotIn("pipeline-test-design.png", text)
+
+    def test_spec_states_size_and_the_two_instructions(self):
+        from tshirt.core.validate import ValidationReport
+        with tempfile.TemporaryDirectory() as td:
+            send, _, profile = self._assets(td)
+            text = package.write_print_spec(
+                Path(td) / "spec.txt", [send], profile,
+                [ValidationReport(asset="export-check-v1.png")]).read_text()
+            self.assertIn("160.0 mm wide", text)
+            self.assertIn("DO NOT RESIZE", text)
+            self.assertIn("normal reading orientation", text)
+            self.assertIn("transparent", text.lower())
+
+    def test_spec_stays_short(self):
+        """The printer is trusted and busy; they do not need our internal state."""
+        from tshirt.core.validate import ValidationReport
+        with tempfile.TemporaryDirectory() as td:
+            send, _, profile = self._assets(td)
+            text = package.write_print_spec(
+                Path(td) / "spec.txt", [send], profile,
+                [ValidationReport(asset="export-check-v1.png")]).read_text()
+            self.assertLess(len(text.splitlines()), 40)
+            self.assertNotIn("ADVISORY", text)
+            self.assertNotIn("PRINT_READY", text)

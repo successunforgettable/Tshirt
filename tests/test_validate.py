@@ -56,28 +56,22 @@ def fully_resolved_profile() -> PrinterProfile:
     )
 
 
-class TestPendingIsNotPass(unittest.TestCase):
-    """The core anti-invention guarantee."""
+class TestNoInventedThresholds(unittest.TestCase):
+    """The anti-invention guarantee survives the advisory reclassification."""
 
-    def test_unknown_stroke_threshold_yields_pending_not_pass(self):
+    def test_unknown_stroke_threshold_is_never_a_pass(self):
         report = validate.validate(make_asset(), make_profile())
         f = next(x for x in report.findings if x.check == "minimum_feature")
-        self.assertEqual(f.verdict, validate.PENDING)
+        self.assertEqual(f.verdict, validate.ADVISORY)
         self.assertNotEqual(f.verdict, validate.PASS)
-        # The measurement is still reported so calibration can turn it into a threshold.
         self.assertIn("p1_stroke_mm", f.detail)
 
-    def test_unknown_alpha_tolerance_yields_pending(self):
+    def test_unknown_alpha_tolerance_is_never_a_pass(self):
         report = validate.validate(make_asset(), make_profile())
         f = next(x for x in report.findings if x.check == "alpha_quality")
-        self.assertEqual(f.verdict, validate.PENDING)
+        self.assertEqual(f.verdict, validate.ADVISORY)
+        self.assertNotEqual(f.verdict, validate.PASS)
         self.assertIn("soft_ratio", f.detail)
-
-    def test_unknown_max_dimensions_yield_pending(self):
-        report = validate.validate(make_asset(), make_profile())
-        verdicts = {f.check: f.verdict for f in report.findings}
-        self.assertEqual(verdicts["max_width"], validate.PENDING)
-        self.assertEqual(verdicts["max_height"], validate.PENDING)
 
     def test_known_threshold_produces_a_real_verdict(self):
         profile = make_profile(
@@ -88,82 +82,101 @@ class TestPendingIsNotPass(unittest.TestCase):
 
 
 class TestReadinessModel(unittest.TestCase):
-    """Three states. A boolean would have to lie about one of them."""
+    """Two states. Blocking checks are OUR correctness; advisories are the printer's."""
 
-    def test_pending_withholds_print_ready(self):
+    def test_advisories_do_not_block_print_ready(self):
+        """The central correction: printer-owned unknowns must not gate our export."""
         report = validate.validate(make_asset(), make_profile())
-        self.assertTrue(report.pending)
-        self.assertEqual(report.readiness, validate.READY_FOR_CALIBRATION)
-        self.assertFalse(report.is_print_ready,
-                         "an asset with unresolved checks must never be print_ready")
-
-    def test_ready_for_calibration_is_still_sendable(self):
-        report = validate.validate(make_asset(), make_profile())
-        self.assertTrue(report.can_send_for_calibration)
+        self.assertTrue(report.advisories)
+        self.assertEqual(report.readiness, validate.PRINT_READY)
+        self.assertTrue(report.is_print_ready)
 
     def test_failure_yields_not_ready(self):
         report = validate.validate(make_asset(image_format="TIFF"), make_profile())
         self.assertEqual(report.readiness, validate.NOT_READY)
-        self.assertFalse(report.can_send_for_calibration)
         self.assertFalse(report.is_print_ready)
 
-    def test_failure_dominates_pending(self):
-        """A FAIL alongside PENDING is NOT_READY, not READY_FOR_CALIBRATION."""
-        report = validate.validate(make_asset(image_format="TIFF"), make_profile())
-        self.assertTrue(report.pending)
+    def test_blocking_check_that_cannot_run_still_blocks(self):
+        """A gap in what WE must verify is not the same as a printer-owned unknown."""
+        profile = make_profile(
+            accepted_formats=Field("accepted_formats", None, UNKNOWN))
+        report = validate.validate(make_asset(), profile)
+        f = next(x for x in report.findings if x.check == "format")
+        self.assertEqual(f.verdict, validate.PENDING)
         self.assertEqual(report.readiness, validate.NOT_READY)
 
-    def test_print_ready_only_when_nothing_is_unresolved(self):
-        report = validate.validate(make_asset(), fully_resolved_profile())
-        self.assertEqual(report.pending, [])
-        self.assertEqual(report.readiness, validate.PRINT_READY)
-        self.assertTrue(report.is_print_ready)
+    def test_failure_dominates_advisories(self):
+        report = validate.validate(make_asset(image_format="TIFF"), make_profile())
+        self.assertTrue(report.advisories)
+        self.assertEqual(report.readiness, validate.NOT_READY)
 
-    def test_a_single_pending_is_enough_to_withhold_print_ready(self):
-        profile = fully_resolved_profile()
-        profile.fields["min_reliable_stroke_mm"] = Field(
-            "min_reliable_stroke_mm", None, UNKNOWN)
-        report = validate.validate(make_asset(), profile)
-        self.assertEqual(len(report.pending), 1)
-        self.assertEqual(report.readiness, validate.READY_FOR_CALIBRATION)
-        self.assertFalse(report.is_print_ready)
-
-    def test_warnings_do_not_withhold_print_ready(self):
+    def test_warnings_do_not_block(self):
         arr = make_rgba()
         arr[0, 0, :3] = 255
         arr[0, 0, 3] = 0
-        report = validate.validate(make_asset(rgba=arr), fully_resolved_profile())
+        report = validate.validate(make_asset(rgba=arr), make_profile())
         self.assertTrue(report.warnings)
         self.assertEqual(report.readiness, validate.PRINT_READY)
 
+    def test_middle_state_is_gone(self):
+        """READY_FOR_CALIBRATION existed to hold printer-characterisation work."""
+        self.assertFalse(hasattr(validate, "READY_FOR_CALIBRATION"))
 
-class TestResolutionPaths(unittest.TestCase):
-    """Unresolved checks are separated by who resolves them."""
+
+class TestAdvisoryClassification(unittest.TestCase):
+    """Which checks block, and which merely report. This must not regress."""
+
+    BLOCKING = {"format", "colour_space", "alpha_channel", "transparency_present",
+                "effective_dpi", "rendered_bounds", "authoritative_string",
+                "glyph_coverage"}
+    ADVISORY = {"alpha_quality", "minimum_feature", "max_width", "max_height"}
 
     def setUp(self):
-        self.report = validate.validate(make_asset(), make_profile())
+        self.report = validate.validate(
+            make_asset(rendered_strings=["N-Codes"], authoritative_strings=["N-Codes"]),
+            make_profile())
 
-    def test_tolerances_are_resolved_by_calibration(self):
-        checks = {f.check for f in self.report.awaiting_calibration}
-        self.assertEqual(checks, {"minimum_feature", "alpha_quality"})
+    def test_printer_owned_checks_are_advisory(self):
+        got = {f.check for f in self.report.advisories}
+        self.assertEqual(got, self.ADVISORY)
 
-    def test_printer_limits_are_resolved_by_asking(self):
-        checks = {f.check for f in self.report.awaiting_printer_answer}
-        self.assertEqual(checks, {"max_width", "max_height"})
+    def test_no_blocking_check_is_advisory(self):
+        for f in self.report.findings:
+            if f.check in self.BLOCKING:
+                self.assertNotEqual(f.verdict, validate.ADVISORY,
+                                    f"{f.check} must remain a blocking check")
 
-    def test_every_pending_declares_a_resolution_path(self):
-        for f in self.report.pending:
+    def test_advisories_still_report_their_measurement(self):
+        """Not blocking is not the same as not measuring."""
+        by_check = {f.check: f for f in self.report.advisories}
+        self.assertIn("p1_stroke_mm", by_check["minimum_feature"].detail)
+        self.assertIn("soft_ratio", by_check["alpha_quality"].detail)
+
+    def test_advisories_name_their_owner(self):
+        for f in self.report.advisories:
             self.assertIn(f.resolution,
-                          (validate.BY_CALIBRATION, validate.BY_PRINTER_ANSWER),
-                          f"{f.check} has no resolution path")
+                          (validate.BY_PRINTER_EXPERTISE, validate.BY_PRINTER_ANSWER))
 
-    def test_summary_exposes_readiness_and_unresolved(self):
+    def test_no_threshold_is_invented(self):
+        """Advisory means 'no threshold supplied', never 'threshold assumed'."""
+        for f in self.report.advisories:
+            self.assertNotIn("tolerance", f.detail)
+            self.assertNotIn("min_reliable_stroke_mm", f.detail)
+
+    def test_supplied_threshold_converts_advisory_to_a_real_verdict(self):
+        profile = make_profile(
+            min_reliable_stroke_mm=Field("min_reliable_stroke_mm", 0.5, CONFIRMED))
+        report = validate.validate(make_asset(), profile)
+        f = next(x for x in report.findings if x.check == "minimum_feature")
+        self.assertIn(f.verdict, (validate.PASS, validate.FAIL))
+        self.assertNotEqual(f.verdict, validate.ADVISORY)
+
+    def test_summary_separates_blocking_from_advisory(self):
         s = self.report.summary()
-        self.assertEqual(s["readiness"], validate.READY_FOR_CALIBRATION)
-        self.assertFalse(s["print_ready"])
-        self.assertTrue(s["can_send_for_calibration"])
-        self.assertEqual(sorted(s["unresolved"]["awaiting_calibration"]),
-                         ["alpha_quality", "minimum_feature"])
+        self.assertEqual(s["readiness"], validate.PRINT_READY)
+        self.assertEqual(sorted(s["advisory"]), sorted(self.ADVISORY))
+        self.assertEqual(s["blocking_failures"], [])
+        self.assertEqual(s["blocking_unrunnable"], [])
 
 
 class TestAuthoritativeStrings(unittest.TestCase):

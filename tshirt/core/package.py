@@ -117,65 +117,47 @@ def _profile_lines(profile: PrinterProfile) -> list[str]:
     return out
 
 
-def write_print_spec(path: str | Path, design: PackagedAsset, calibration: PackagedAsset,
-                     profile: PrinterProfile, garment: dict, reports: list[ValidationReport]) -> Path:
+def write_print_spec(path: str | Path, send_assets: list[PackagedAsset],
+                     profile: PrinterProfile, reports: list[ValidationReport]) -> Path:
+    """Write the spec for the files actually being sent.
+
+    Takes an explicit send list, so an asset that exists in the repo but is not
+    being printed cannot leak into the printer's instructions.
+
+    Kept short on purpose. The printer is experienced and trusted; they need the
+    file, the size, and two instructions - not our internal validation state.
+    """
     path = Path(path)
     lines: list[str] = []
     a = lines.append
 
     a("PRINT SPECIFICATION")
-    a("THE INCREDIBLE YOU 001")
     a("")
-    a("Process: DTF transfer (confirmed by printer)")
-    a("")
-    a("IMPORTANT")
-    a("  1. DO NOT RESIZE. Both files are built at exact final print size.")
-    a("  2. DO NOT MIRROR. Artwork is supplied UNMIRRORED; we understand your")
-    a("     RIP handles transfer mirroring. If that is wrong, please tell us")
-    a("     BEFORE printing rather than mirroring the file yourself.")
-    a("  3. Please place both files on the same gang sheet / batch.")
+    a("Process: DTF transfer")
     a("")
 
     def asset_block(title: str, asset: PackagedAsset) -> None:
         a(title)
-        a(f"  Filename    : PRINT/{asset.filename}")
+        a(f"  Filename    : {asset.filename}")
         a(f"  Print size  : {asset.width_mm:.1f} mm wide x {asset.height_mm:.1f} mm high")
         a(f"  Pixels      : {asset.width_px} x {asset.height_px}")
         a(f"  Resolution  : {asset.dpi:.0f} DPI at the size above")
-        a(f"  Colour      : RGB / sRGB, 8-bit, with alpha")
-        a(f"  Background  : fully transparent")
+        a(f"  Colour      : RGB / sRGB, 8-bit")
+        a(f"  Background  : fully transparent PNG")
         a(f"  SHA-256     :")
         a(f"    {asset.checksum}")
         a("")
 
-    asset_block("[1] PRODUCTION ARTWORK", design)
-    a(f"  Garment     : {garment.get('colour','')} {garment.get('type','')}, "
-      f"size {garment.get('size','TBC')}")
-    a(f"  Placement   : {garment.get('placement','')}")
-    a("")
+    for i, asset in enumerate(send_assets, 1):
+        asset_block(f"[{i}] FILE" if len(send_assets) > 1 else "FILE", asset)
 
-    asset_block("[2] CALIBRATION SHEET", calibration)
-    a("  This sheet is a measurement instrument, not a design. It lets us")
-    a("  characterise your process so future files arrive correct first time.")
-    a("  Please print it at exactly the stated size alongside file 1.")
+    a("PLEASE NOTE")
+    a("  1. Print at exactly the stated physical size. DO NOT RESIZE.")
+    a("  2. Supplied in normal reading orientation - please handle DTF")
+    a("     production orientation as you normally would.")
     a("")
-
-    a("[3] PRINTER PROFILE STATE")
-    lines.extend(_profile_lines(profile))
-
-    a("[4] VALIDATION SUMMARY")
-    for r in reports:
-        s = r.summary()
-        a(f"  {r.asset}: {s['readiness']}")
-        for f in r.findings:
-            if f.verdict in ("FAIL", "WARNING", "PENDING"):
-                lines.extend(wrap_lines(f"[{f.verdict}] {f.check}: {f.message}",
-                                        indent="    "))
-    a("")
-    a("  READY_FOR_CALIBRATION means: no failures, and safe to print as part of")
-    a("  this calibration run, but NOT yet proven print-ready, because some")
-    a("  checks could not run against a real tolerance. PENDING is not a pass.")
-    a("  Establishing those tolerances is exactly what this transfer is for.")
+    a("This is a one-off check that our export software is producing files at")
+    a("the correct physical size. Nothing unusual is needed at your end.")
     a("")
     a("End of specification.")
 

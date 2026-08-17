@@ -1,0 +1,304 @@
+{
+  "package_id": "GATE-1A-EXPORT-CHECK",
+  "generated": "2026-08-17",
+  "gate": "1a",
+  "gate_purpose": "Prove our software emits a correct DTF-ready file at the intended physical size. Does not characterise the printer.",
+  "pipeline_version": "gate-1a.2",
+  "ai_generation_used": false,
+  "provider": null,
+  "typography": {
+    "font_file": "assets/fonts/LiberationSans-Bold.ttf",
+    "font_licence": "SIL OFL 1.1",
+    "deterministic": true,
+    "rendered_strings": [
+      "0",
+      "100",
+      "100 mm",
+      "50",
+      "EXPORT CHECK v1",
+      "INTENDED SIZE: 160 mm WIDE  -  300 DPI  -  PNG RGBA",
+      "N-Codes",
+      "ORIENT",
+      "THE INCREDIBLE YOU",
+      "TRANSPARENT BACKGROUND  -  DO NOT RESIZE"
+    ],
+    "missing_glyphs": [],
+    "authoritative_strings": [
+      "THE INCREDIBLE YOU",
+      "N-Codes"
+    ]
+  },
+  "send_to_printer": [
+    "export-check-v1.png"
+  ],
+  "assets": [
+    {
+      "filename": "export-check-v1.png",
+      "role": "export_check",
+      "width_px": 1890,
+      "height_px": 1597,
+      "width_mm": 160.02,
+      "height_mm": 135.213,
+      "dpi": 300.0,
+      "checksum": "c4055e7d5fdf9aab2977079e00be26a0b84ef6eb70fc6fcdb670452ded09a371",
+      "bytes": 52921
+    }
+  ],
+  "export_check_elements": [
+    "orientation_marker",
+    "vertical_reference_100mm",
+    "printed_dimensions",
+    "horizontal_reference_100mm",
+    "deterministic_text",
+    "solid_geometry",
+    "registration_marks"
+  ],
+  "export_check_regions": {
+    "orientation_marker": {
+      "glyph": "R",
+      "x": 1715,
+      "y": 106,
+      "w": 69,
+      "h": 74
+    },
+    "vertical_reference": {
+      "x": 106,
+      "y": 227,
+      "length_px": 1181,
+      "length_mm": 100.0
+    },
+    "horizontal_reference": {
+      "x": 283,
+      "y": 356,
+      "length_px": 1181,
+      "length_mm": 100.0
+    },
+    "solid_block": {
+      "x": 283,
+      "y": 726,
+      "w": 732,
+      "h": 236
+    },
+    "registration_marks": {
+      "inset_mm": 3.0,
+      "horizontal_separation_px": 1820,
+      "vertical_separation_px": 1527
+    }
+  },
+  "diagnostics_not_sent": {},
+  "printer_profile": {
+    "name": "Printer A",
+    "confirmed": {
+      "process": "DTF",
+      "accepted_formats": [
+        "PNG"
+      ],
+      "preferred_format": "PNG",
+      "requires_transparency": true
+    },
+    "assumed": {
+      "required_dpi": {
+        "value": 300,
+        "confirm_via": "Calibration ruler and stroke ladder \u2014 measure whether 300 DPI detail survives."
+      },
+      "colour_space": {
+        "value": "sRGB",
+        "confirm_via": "Calibration red sweep and greyscale wedge \u2014 measure colour drift."
+      },
+      "rip_handles_mirroring": {
+        "value": true,
+        "confirm_via": "Calibration asymmetric orientation marker \u2014 if it reads reversed, this assumption is wrong."
+      }
+    },
+    "unknown": [
+      "max_width_mm",
+      "max_height_mm",
+      "min_reliable_stroke_mm",
+      "max_partial_alpha_ratio",
+      "white_underbase_behaviour",
+      "min_negative_space_mm",
+      "printer_resizes_files",
+      "cutting_responsibility",
+      "cost_per_transfer",
+      "turnaround",
+      "special_instructions"
+    ]
+  },
+  "validation": [
+    {
+      "asset": "export-check-v1.png",
+      "readiness": "PRINT_READY",
+      "print_ready": true,
+      "counts": {
+        "PASS": 10,
+        "ADVISORY": 4
+      },
+      "blocking_failures": [],
+      "blocking_unrunnable": [],
+      "advisory": [
+        "alpha_quality",
+        "max_width",
+        "max_height",
+        "minimum_feature"
+      ],
+      "findings": [
+        {
+          "check": "format",
+          "verdict": "PASS",
+          "message": "PNG is accepted.",
+          "detail": {
+            "format": "PNG",
+            "accepted": [
+              "PNG"
+            ],
+            "status": "confirmed"
+          }
+        },
+        {
+          "check": "colour_space",
+          "verdict": "PASS",
+          "message": "Image mode RGBA against profile sRGB (assumed).",
+          "detail": {
+            "mode": "RGBA",
+            "profile_value": "sRGB",
+            "profile_status": "assumed"
+          }
+        },
+        {
+          "check": "alpha_channel",
+          "verdict": "PASS",
+          "message": "RGBA alpha channel present.",
+          "detail": {}
+        },
+        {
+          "check": "transparency_present",
+          "verdict": "PASS",
+          "message": "2,697,861 transparent pixels (89.4% of canvas).",
+          "detail": {
+            "transparent_px": 2697861,
+            "total_px": 3018330
+          }
+        },
+        {
+          "check": "stray_colour_in_transparent",
+          "verdict": "PASS",
+          "message": "No colour data in fully transparent pixels.",
+          "detail": {}
+        },
+        {
+          "check": "alpha_quality",
+          "verdict": "ADVISORY",
+          "message": "Soft (non-edge) partial alpha measured at 0.0056% of inked pixels. No printer tolerance supplied; reported for information only.",
+          "detail": {
+            "inked_px": 320469,
+            "partial_px": 15967,
+            "partial_ratio": 0.049824,
+            "soft_px": 18,
+            "soft_ratio": 5.6e-05,
+            "edge_band_px": 3
+          },
+          "resolution": "printer_expertise"
+        },
+        {
+          "check": "effective_dpi",
+          "verdict": "PASS",
+          "message": "Computed 300.0 x 300.0 DPI against required 300 (assumed).",
+          "detail": {
+            "effective_dpi_width": 300.0,
+            "effective_dpi_height": 300.0,
+            "width_px": 1890,
+            "height_px": 1597,
+            "declared_width_mm": 160.02,
+            "declared_height_mm": 135.213,
+            "required_dpi": 300,
+            "required_dpi_status": "assumed"
+          }
+        },
+        {
+          "check": "max_width",
+          "verdict": "ADVISORY",
+          "message": "Declared width 160.0 mm. No printer maximum supplied; reported for information only.",
+          "detail": {
+            "declared_width_mm": 160.02
+          },
+          "resolution": "printer_answer"
+        },
+        {
+          "check": "max_height",
+          "verdict": "ADVISORY",
+          "message": "Declared height 135.2 mm. No printer maximum supplied; reported for information only.",
+          "detail": {
+            "declared_height_mm": 135.21
+          },
+          "resolution": "printer_answer"
+        },
+        {
+          "check": "minimum_feature",
+          "verdict": "ADVISORY",
+          "message": "Thinnest stroke (1st percentile) measured at 0.169 mm. No printer minimum supplied; reported for information only.",
+          "detail": {
+            "p1_stroke_px": 2.0,
+            "p1_stroke_mm": 0.1693,
+            "min_stroke_px": 1,
+            "min_stroke_mm": 0.0847,
+            "method_notes": [
+              "Run-length method: exact for axis-aligned strokes, overestimates diagonals by up to sqrt(2). Lower-bound safe; not exact."
+            ]
+          },
+          "resolution": "printer_expertise"
+        },
+        {
+          "check": "rendered_bounds",
+          "verdict": "PASS",
+          "message": "Ink extends to every canvas edge: declared size is the artwork size.",
+          "detail": {
+            "canvas_px": [
+              1890,
+              1597
+            ],
+            "inked_bbox": {
+              "left": 0,
+              "top": 0,
+              "right": 1889,
+              "bottom": 1596,
+              "width": 1890,
+              "height": 1597
+            },
+            "inked_width_mm": 160.02,
+            "inked_height_mm": 135.213,
+            "transparent_margin_px": {
+              "left_px": 0,
+              "top_px": 0,
+              "right_px": 0,
+              "bottom_px": 0
+            }
+          }
+        },
+        {
+          "check": "authoritative_string",
+          "verdict": "PASS",
+          "message": "Exact match rendered as a complete string: 'THE INCREDIBLE YOU'",
+          "detail": {
+            "expected": "THE INCREDIBLE YOU",
+            "match": "whole_string"
+          }
+        },
+        {
+          "check": "authoritative_string",
+          "verdict": "PASS",
+          "message": "Exact match rendered as a complete string: 'N-Codes'",
+          "detail": {
+            "expected": "N-Codes",
+            "match": "whole_string"
+          }
+        },
+        {
+          "check": "glyph_coverage",
+          "verdict": "PASS",
+          "message": "Font provides a glyph for every character rendered.",
+          "detail": {}
+        }
+      ]
+    }
+  ]
+}
