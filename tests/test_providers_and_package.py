@@ -117,5 +117,74 @@ class TestPackaging(unittest.TestCase):
             self.assertEqual(json.loads(p.read_text())["design_id"], "X")
 
 
+class TestPrintSpecPortability(unittest.TestCase):
+    """The spec is opened on unknown software, so it stays deliberately boring.
+
+    A print shop may read it on a phone, in a mail client, or in a terminal.
+    Anything that invites a previewer to reinterpret the document is removed.
+    """
+
+    def test_ascii_flattens_typographic_punctuation(self):
+        self.assertEqual(package.to_ascii("a — b – c"), "a - b - c")
+        self.assertEqual(package.to_ascii("‘x’ “y”"), "'x' \"y\"")
+        self.assertEqual(package.to_ascii("wait…"), "wait...")
+
+    def test_ascii_output_is_encodable(self):
+        package.to_ascii("emoji \U0001F600 and é").encode("ascii")
+
+    def test_wrap_respects_width_and_indent(self):
+        out = package.wrap_lines("word " * 60, indent="    ")
+        for line in out:
+            self.assertLessEqual(len(line), package.SPEC_WIDTH)
+            self.assertTrue(line.startswith("    "))
+
+    def test_wrap_keeps_long_tokens_whole(self):
+        """A SHA-256 must never be broken across lines - it would be unusable."""
+        digest = "a" * 64
+        out = package.wrap_lines(digest, indent="  ")
+        self.assertIn(digest, "".join(out))
+
+    def test_wrap_never_returns_empty(self):
+        self.assertEqual(package.wrap_lines(""), [""])
+
+    def test_generated_spec_is_plain_ascii_and_narrow(self):
+        from tshirt.core.profile import load_profile
+        from tshirt.core.validate import ValidationReport
+        with tempfile.TemporaryDirectory() as td:
+            p = package.save_png(Image.new("RGBA", (100, 100)), Path(td) / "a.png", 300)
+            asset = package.describe_asset(p, "production", 8.47, 8.47, 300)
+            spec = package.write_print_spec(
+                Path(td) / "print-spec.txt", asset, asset,
+                load_profile(ROOT / "profiles" / "dtf-printer-a.json"),
+                {"type": "T-shirt", "colour": "black", "size": "M"},
+                [ValidationReport(asset="a.png")],
+            )
+            raw = spec.read_bytes()
+            raw.decode("ascii")                       # no non-ASCII bytes at all
+            self.assertNotIn(b"\r", raw)              # no CRLF
+            text = raw.decode("ascii")
+            for i, line in enumerate(text.splitlines(), 1):
+                self.assertLessEqual(len(line), package.SPEC_WIDTH,
+                                     f"line {i} is {len(line)} chars")
+
+    def test_generated_spec_has_no_setext_separator_runs(self):
+        """Runs of === or --- make a Markdown previewer reformat the document."""
+        import re
+        from tshirt.core.profile import load_profile
+        from tshirt.core.validate import ValidationReport
+        with tempfile.TemporaryDirectory() as td:
+            p = package.save_png(Image.new("RGBA", (100, 100)), Path(td) / "a.png", 300)
+            asset = package.describe_asset(p, "production", 8.47, 8.47, 300)
+            spec = package.write_print_spec(
+                Path(td) / "print-spec.txt", asset, asset,
+                load_profile(ROOT / "profiles" / "dtf-printer-a.json"),
+                {"type": "T-shirt", "colour": "black", "size": "M"},
+                [ValidationReport(asset="a.png")],
+            )
+            for i, line in enumerate(spec.read_text().splitlines(), 1):
+                self.assertIsNone(re.fullmatch(r"\s*[=\-*_]{3,}\s*", line),
+                                  f"line {i} is a separator run: {line!r}")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,58 +1,55 @@
-==============================================================================
-PRINT SPECIFICATION - THE INCREDIBLE YOU 001
-==============================================================================
+PRINT SPECIFICATION
+THE INCREDIBLE YOU 001
 
-PROCESS: DTF transfer (confirmed by printer)
+Process: DTF transfer (confirmed by printer)
 
-*** DO NOT RESIZE. Both files are built at exact final print size. ***
-*** DO NOT MIRROR. Artwork is supplied UNMIRRORED; we understand your
-    RIP handles transfer mirroring. If that is wrong, please tell us
-    BEFORE printing rather than mirroring the file yourself. ***
+IMPORTANT
+  1. DO NOT RESIZE. Both files are built at exact final print size.
+  2. DO NOT MIRROR. Artwork is supplied UNMIRRORED; we understand your
+     RIP handles transfer mirroring. If that is wrong, please tell us
+     BEFORE printing rather than mirroring the file yourself.
+  3. Please place both files on the same gang sheet / batch.
 
-PLEASE PLACE BOTH FILES ON THE SAME GANG SHEET / BATCH.
+[1] PRODUCTION ARTWORK
+  Filename    : PRINT/incredible-you-001.png
+  Print size  : 280.1 mm wide x 270.0 mm high
+  Pixels      : 3308 x 3189
+  Resolution  : 300 DPI at the size above
+  Colour      : RGB / sRGB, 8-bit, with alpha
+  Background  : fully transparent
+  SHA-256     :
+    dc34fef81a609a16546bbf797b6fafd7d87bd06868784c957d8568d29aa0b09e
 
-------------------------------------------------------------------------------
-FILE 1 - PRODUCTION ARTWORK
-------------------------------------------------------------------------------
-  Filename          : PRINT/incredible-you-001.png
-  Print size        : 280.1 mm wide x 270.0 mm high
-  Pixel dimensions  : 3308 x 3189 px
-  Resolution        : 300 DPI at the size above
-  Colour            : RGB / sRGB, 8-bit, with alpha
-  Background        : fully transparent
-  SHA-256           : dc34fef81a609a16546bbf797b6fafd7d87bd06868784c957d8568d29aa0b09e
+  Garment     : black T-shirt, size M
+  Placement   : large centred front
 
-  Garment           : black T-shirt, size M
-  Placement         : large centred front
-
-------------------------------------------------------------------------------
-FILE 2 - CALIBRATION SHEET
-------------------------------------------------------------------------------
-  Filename          : PRINT/calibration-v1.png
-  Print size        : 200.0 mm wide x 330.6 mm high
-  Pixel dimensions  : 2362 x 3905 px
-  Resolution        : 300 DPI at the size above
-  SHA-256           : 76810d32c1cda9fc2e1986eeb2c4b373f0b8786133f1fa6106a8d419e0783c80
+[2] CALIBRATION SHEET
+  Filename    : PRINT/calibration-v1.png
+  Print size  : 200.0 mm wide x 330.6 mm high
+  Pixels      : 2362 x 3905
+  Resolution  : 300 DPI at the size above
+  Colour      : RGB / sRGB, 8-bit, with alpha
+  Background  : fully transparent
+  SHA-256     :
+    76810d32c1cda9fc2e1986eeb2c4b373f0b8786133f1fa6106a8d419e0783c80
 
   This sheet is a measurement instrument, not a design. It lets us
   characterise your process so future files arrive correct first time.
-  Please print it at exactly the stated size alongside File 1.
+  Please print it at exactly the stated size alongside file 1.
 
-------------------------------------------------------------------------------
-PRINTER PROFILE STATE
-------------------------------------------------------------------------------
-  CONFIRMED BY PRINTER:
+[3] PRINTER PROFILE STATE
+  Confirmed by printer:
     - accepted_formats: ['PNG']
     - preferred_format: PNG
     - process: DTF
     - requires_transparency: True
 
-  WORKING ASSUMPTIONS - NOT CONFIRMED:
+  Working assumptions (NOT confirmed):
     - colour_space: sRGB
     - required_dpi: 300
     - rip_handles_mirroring: True
 
-  UNKNOWN - AWAITING MEASUREMENT:
+  Unknown (awaiting measurement):
     - cost_per_transfer: not supplied
     - cutting_responsibility: not supplied
     - max_height_mm: not supplied
@@ -65,23 +62,29 @@ PRINTER PROFILE STATE
     - turnaround: not supplied
     - white_underbase_behaviour: not supplied
 
-------------------------------------------------------------------------------
-VALIDATION SUMMARY
-------------------------------------------------------------------------------
-  incredible-you-001.png: READY_FOR_CALIBRATION  {'PASS': 9, 'PENDING': 4}
-    [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at 0.0002% of inked pixels. Printer tolerance unknown — to be established by the calibration alpha step wedge.
+[4] VALIDATION SUMMARY
+  incredible-you-001.png: READY_FOR_CALIBRATION
+    [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at 0.0002%
+    of inked pixels. Printer tolerance unknown - to be established by the
+    calibration alpha step wedge.
     [PENDING] max_width: Maximum width not supplied by printer.
     [PENDING] max_height: Maximum height not supplied by printer.
-    [PENDING] minimum_feature: Thinnest stroke (1st percentile) measured at 2.032 mm. Printer minimum unknown — to be established by the calibration stroke ladder.
-  calibration-v1.png: READY_FOR_CALIBRATION  {'PASS': 11, 'PENDING': 4}
-    [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at 19.8755% of inked pixels. Printer tolerance unknown — to be established by the calibration alpha step wedge.
+    [PENDING] minimum_feature: Thinnest stroke (1st percentile) measured at
+    2.032 mm. Printer minimum unknown - to be established by the calibration
+    stroke ladder.
+  calibration-v1.png: READY_FOR_CALIBRATION
+    [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at
+    19.8755% of inked pixels. Printer tolerance unknown - to be established by
+    the calibration alpha step wedge.
     [PENDING] max_width: Maximum width not supplied by printer.
     [PENDING] max_height: Maximum height not supplied by printer.
-    [PENDING] minimum_feature: Thinnest stroke (1st percentile) measured at 0.085 mm. Printer minimum unknown — to be established by the calibration stroke ladder.
+    [PENDING] minimum_feature: Thinnest stroke (1st percentile) measured at
+    0.085 mm. Printer minimum unknown - to be established by the calibration
+    stroke ladder.
 
   READY_FOR_CALIBRATION means: no failures, and safe to print as part of
-  this calibration run - but NOT yet proven print-ready, because some
+  this calibration run, but NOT yet proven print-ready, because some
   checks could not run against a real tolerance. PENDING is not a pass.
   Establishing those tolerances is exactly what this transfer is for.
 
-==============================================================================
+End of specification.
