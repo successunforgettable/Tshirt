@@ -54,8 +54,8 @@ Everything else depends on the file not having been rescaled.
      every other measurement below is then suspect.
 2. Measure the **design width** across the widest point of `INCREDIBLE`.
    - Expected **280.1 mm**. Measured: ______ mm
-3. Measure the **design height** (top of the upper rule to the bottom of `YOU`).
-   - Expected **101.8 mm**. Measured: ______ mm
+3. Measure the **design height** (top of the upper rule to the bottom of the lower rule).
+   - Expected **270.0 mm**. Measured: ______ mm
 4. Measure between opposing **registration marks** on the calibration sheet to check for
    distortion across the sheet.
 
@@ -202,7 +202,7 @@ and I will change the pipeline.
 | Check | Result |
 |---|---|
 | Edge quality of the letterforms | |
-| The 2 mm flanking rules — solid and even? | |
+| The 2 mm rules above and below — solid and even? | |
 | Any cracking, lifting or bubbling? | |
 | Placement on the garment (centred? height right?) | |
 | Does it look like a shirt you would actually wear? | |

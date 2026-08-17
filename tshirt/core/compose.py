@@ -142,67 +142,82 @@ def fit_tracking_for_width(font_path: str | Path, text: str, font_size_px: int,
     return best
 
 
-def compose_incredible_you(font_path: str | Path, target_width_px: int,
-                           dpi: float, rule_thickness_mm: float = 2.0) -> ComposeResult:
-    """The Gate 1a production composition.
+def compose_incredible_you(font_path: str | Path, target_width_px: int, dpi: float,
+                           rule_thickness_mm: float = 2.0,
+                           sub_scale: float = 1.80,
+                           line_gap_ratio: float = 0.50,
+                           rule_gap_ratio: float = 0.70) -> ComposeResult:
+    """The Gate 1a production composition — a large centre-front lockup.
 
-    An ORIGINAL typographic merchandise lockup — a centred three-line stack with
-    the longest word dominant and thin flanking rules. It is deliberately NOT a
-    reconstruction of the official brand mark (D-17): no human figure, no attempt
-    to mirror the identity's own hierarchy, and INCREDIBLE rather than YOU carries
-    the dominant weight. Only generic typographic conventions are used.
+    An ORIGINAL justified typographic stack: every line set to the same measure,
+    bounded by full-width rules top and bottom.
 
-    The flanking rules are set at a safely printable 2 mm. Probing the printer's
-    actual limits is the calibration sheet's job, not the production piece's.
+        ─────────────────────────────
+        T      H      E
+        INCREDIBLE
+        Y      O      U
+        ─────────────────────────────
+
+    Why this form. All three lines are justified to one measure, so the short
+    words are letterspaced rather than enlarged out of proportion. That is a
+    standard editorial/Swiss convention and it gives the piece real vertical
+    presence — a centre-front block rather than a shallow chest banner — without
+    inventing an arbitrary height. Height still falls out of the type.
+
+    Kept clearly original (D-17): no human figure; no reconstruction, tracing or
+    approximation of the official mark; and THE and YOU are treated IDENTICALLY,
+    so the composition does not reproduce the identity's own emphasis on YOU.
+    Only generic typographic conventions are used.
+
+    Rules are set at a safely printable 2 mm. Probing the printer's actual limits
+    is the calibration sheet's job, not the production piece's.
     """
     font_path = str(font_path)
     words = ("THE", "INCREDIBLE", "YOU")
     full_string = "THE INCREDIBLE YOU"
 
-    # INCREDIBLE is the width-setting element.
+    # INCREDIBLE, the longest word, sets the measure at natural tracking.
     main_size = fit_font_size_for_width(font_path, "INCREDIBLE", target_width_px,
                                         tracking_ratio=-0.01)
     main_img = render_line(font_path, "INCREDIBLE", main_size, -0.01 * main_size)
 
-    # THE and YOU are supporting elements at EQUAL weight. Keeping them equal is
-    # deliberate: giving YOU dominant emphasis would echo the identity's own
-    # hierarchy, and this composition must remain clearly original (D-17).
-    sub_size = max(8, int(main_size * 0.46))
-    sub_target = int(target_width_px * 0.38)
-    the_track = fit_tracking_for_width(font_path, "THE", sub_size, sub_target)
-    you_track = fit_tracking_for_width(font_path, "YOU", sub_size, sub_target)
-    the_img = render_line(font_path, "THE", sub_size, the_track)
-    you_img = render_line(font_path, "YOU", sub_size, you_track)
+    # THE and YOU are larger in cap height but justified to the same measure, so
+    # the block reads as one mass. Identical treatment for both, deliberately.
+    sub_size = max(8, int(main_size * sub_scale))
+    the_img = render_line(font_path, "THE", sub_size,
+                          fit_tracking_for_width(font_path, "THE", sub_size, target_width_px))
+    you_img = render_line(font_path, "YOU", sub_size,
+                          fit_tracking_for_width(font_path, "YOU", sub_size, target_width_px))
 
     rule_px = max(1, round(rule_thickness_mm / 25.4 * dpi))
-    gap_px = round(sub_size * 0.60)          # gap between a rule and its word
-    line_gap = round(main_size * 0.40)       # vertical gap between lines
+    line_gap = round(main_size * line_gap_ratio)
+    rule_gap = round(main_size * rule_gap_ratio)
 
-    width = max(target_width_px, main_img.width)
-    height = the_img.height + line_gap + main_img.height + line_gap + you_img.height
+    width = target_width_px
+    height = (rule_px + rule_gap
+              + the_img.height + line_gap
+              + main_img.height + line_gap
+              + you_img.height
+              + rule_gap + rule_px)
+
     canvas = Image.new("RGBA", (width, height), TRANSPARENT)
     draw = ImageDraw.Draw(canvas)
 
-    def place_with_rules(img: Image.Image, top: int) -> dict:
+    def place(img: Image.Image, top: int) -> dict:
         x = (width - img.width) // 2
         canvas.alpha_composite(img, (x, top))
-        cy = top + img.height // 2 - rule_px // 2
-        left_end = x - gap_px
-        right_start = x + img.width + gap_px
-        if left_end > 0:
-            draw.rectangle([0, cy, left_end, cy + rule_px - 1], fill=WHITE)
-        if right_start < width:
-            draw.rectangle([right_start, cy, width - 1, cy + rule_px - 1], fill=WHITE)
         return {"x": x, "top": top, "width": img.width, "height": img.height}
 
     y = 0
-    layout_the = place_with_rules(the_img, y)
+    draw.rectangle([0, y, width - 1, y + rule_px - 1], fill=WHITE)
+    y += rule_px + rule_gap
+    layout_the = place(the_img, y)
     y += the_img.height + line_gap
-    x_main = (width - main_img.width) // 2
-    canvas.alpha_composite(main_img, (x_main, y))
-    layout_main = {"x": x_main, "top": y, "width": main_img.width, "height": main_img.height}
+    layout_main = place(main_img, y)
     y += main_img.height + line_gap
-    layout_you = place_with_rules(you_img, y)
+    layout_you = place(you_img, y)
+    y += you_img.height + rule_gap
+    draw.rectangle([0, y, width - 1, y + rule_px - 1], fill=WHITE)
 
     bbox = canvas.getbbox()
     cropped = canvas.crop(bbox)
@@ -217,11 +232,12 @@ def compose_incredible_you(font_path: str | Path, target_width_px: int,
             "target_width_px": target_width_px,
             "achieved_width_px": cropped.width,
             "achieved_height_px": cropped.height,
+            "aspect_w_over_h": round(cropped.width / cropped.height, 3),
             "main_font_size_px": main_size,
             "sub_font_size_px": sub_size,
             "rule_thickness_px": rule_px,
             "rule_thickness_mm": rule_thickness_mm,
             "lines": {"THE": layout_the, "INCREDIBLE": layout_main, "YOU": layout_you},
-            "composition": "original centred three-line lockup with flanking rules",
+            "composition": "original justified three-line stack, full-width rules top and bottom",
         },
     )

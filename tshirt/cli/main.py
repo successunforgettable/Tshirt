@@ -130,7 +130,12 @@ def build(outdir: Path) -> dict:
         print(f"--- {r.asset} ---")
         for f in r.findings:
             print(f"  [{f.verdict:7}] {f.check}: {f.message}")
-        print(f"  => print_ready={r.is_print_ready}\n")
+        print(f"  => readiness={r.readiness}")
+        if r.awaiting_calibration:
+            print(f"     awaiting calibration    : {[f.check for f in r.awaiting_calibration]}")
+        if r.awaiting_printer_answer:
+            print(f"     awaiting printer answer : {[f.check for f in r.awaiting_printer_answer]}")
+        print()
 
     # --- package --------------------------------------------------------------
     design_pkg = package.describe_asset(design_path, "production",
@@ -183,10 +188,16 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     manifest = build(Path(args.outdir))
-    failed = any(not r["print_ready"] for r in manifest["validation"])
-    if failed:
-        print("VALIDATION FAILED - package is not print-ready", file=sys.stderr)
+    states = [r["readiness"] for r in manifest["validation"]]
+    if validate.NOT_READY in states:
+        print("VALIDATION FAILED - do not send", file=sys.stderr)
         return 1
+    if all(s == validate.PRINT_READY for s in states):
+        print("All assets PRINT_READY.")
+    else:
+        print("All assets READY_FOR_CALIBRATION - NOT print-ready.")
+        print("Unresolved checks become resolvable once the calibration transfer is "
+              "measured and the printer answers the outstanding questions.")
     return 0
 
 

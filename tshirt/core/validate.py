@@ -13,6 +13,13 @@ tolerances it does not have (D-11). Before physical calibration, minimum stroke
 width and partial-alpha tolerance are genuinely unknown, and reporting them as
 PASS would be a lie that reaches the printer. The measurement is still reported
 so the calibration transfer can turn it into a real threshold.
+
+Findings roll up into one of three asset states — NOT_READY,
+READY_FOR_CALIBRATION, PRINT_READY — rather than a boolean. A boolean forces an
+asset with unmeasured print behaviour into either "not ready" (false: it is
+perfectly sendable for calibration) or "print ready" (false: nothing about its
+physical behaviour has been established). The middle state is the honest one for
+a first transfer, and it is where Gate 1a assets sit.
 """
 
 from __future__ import annotations
@@ -28,6 +35,31 @@ WARNING = "WARNING"
 FAIL = "FAIL"
 PENDING = "PENDING"
 
+# --- asset readiness ---------------------------------------------------------
+#
+# Three states, because two are not enough. An asset can be structurally sound
+# and still not be proven fit for production, and collapsing that into a boolean
+# produces a green label on artwork whose print behaviour nobody has measured.
+#
+#   NOT_READY              a FAIL is present. Do not send.
+#   READY_FOR_CALIBRATION  no FAIL, but checks remain unresolved. Safe to send as
+#                          part of a calibration run; NOT proven print-ready.
+#   PRINT_READY            no FAIL and nothing unresolved. Every required check
+#                          ran against a real threshold and passed.
+#
+# PRINT_READY is deliberately hard to reach: any PENDING at all withholds it.
+# Weakening PENDING to obtain a green status would defeat the reason PENDING
+# exists.
+
+NOT_READY = "NOT_READY"
+READY_FOR_CALIBRATION = "READY_FOR_CALIBRATION"
+PRINT_READY = "PRINT_READY"
+
+# How an unresolved check gets resolved. These have different owners and
+# different timescales, so they are reported separately.
+BY_CALIBRATION = "calibration"        # measure it from the physical transfer
+BY_PRINTER_ANSWER = "printer_answer"  # ask the printer
+
 
 @dataclass(frozen=True)
 class Finding:
@@ -35,14 +67,18 @@ class Finding:
     verdict: str
     message: str
     detail: dict[str, Any] = field(default_factory=dict)
+    resolution: str | None = None      # set on PENDING: how it becomes resolvable
 
     def as_dict(self) -> dict:
-        return {
+        out = {
             "check": self.check,
             "verdict": self.verdict,
             "message": self.message,
             "detail": self.detail,
         }
+        if self.resolution:
+            out["resolution"] = self.resolution
+        return out
 
 
 @dataclass
@@ -66,9 +102,34 @@ class ValidationReport:
         return [f for f in self.findings if f.verdict == PENDING]
 
     @property
+    def awaiting_calibration(self) -> list[Finding]:
+        return [f for f in self.pending if f.resolution == BY_CALIBRATION]
+
+    @property
+    def awaiting_printer_answer(self) -> list[Finding]:
+        return [f for f in self.pending if f.resolution == BY_PRINTER_ANSWER]
+
+    @property
+    def readiness(self) -> str:
+        """NOT_READY / READY_FOR_CALIBRATION / PRINT_READY.
+
+        Any PENDING withholds PRINT_READY, whatever its resolution path. An
+        unmeasured tolerance is unmeasured regardless of who is going to supply it.
+        """
+        if self.failures:
+            return NOT_READY
+        if self.pending:
+            return READY_FOR_CALIBRATION
+        return PRINT_READY
+
+    @property
     def is_print_ready(self) -> bool:
-        """No FAIL. PENDING does not block — it records an unmeasurable check."""
-        return not self.failures
+        """True only in the PRINT_READY state. Never true with anything pending."""
+        return self.readiness == PRINT_READY
+
+    @property
+    def can_send_for_calibration(self) -> bool:
+        return self.readiness in (READY_FOR_CALIBRATION, PRINT_READY)
 
     def summary(self) -> dict:
         counts: dict[str, int] = {}
@@ -76,8 +137,14 @@ class ValidationReport:
             counts[f.verdict] = counts.get(f.verdict, 0) + 1
         return {
             "asset": self.asset,
+            "readiness": self.readiness,
             "print_ready": self.is_print_ready,
+            "can_send_for_calibration": self.can_send_for_calibration,
             "counts": counts,
+            "unresolved": {
+                "awaiting_calibration": [f.check for f in self.awaiting_calibration],
+                "awaiting_printer_answer": [f.check for f in self.awaiting_printer_answer],
+            },
             "findings": [f.as_dict() for f in self.findings],
         }
 
@@ -103,7 +170,8 @@ class AssetUnderTest:
 def check_format(asset: AssetUnderTest, profile: PrinterProfile) -> Finding:
     accepted = profile.get("accepted_formats")
     if not accepted.is_known:
-        return Finding("format", PENDING, "Accepted formats not supplied by printer.")
+        return Finding("format", PENDING, "Accepted formats not supplied by printer.",
+                       resolution=BY_PRINTER_ANSWER)
     if asset.image_format.upper() in [a.upper() for a in accepted.value]:
         return Finding(
             "format", PASS,
@@ -120,7 +188,8 @@ def check_format(asset: AssetUnderTest, profile: PrinterProfile) -> Finding:
 def check_colour_space(asset: AssetUnderTest, profile: PrinterProfile) -> Finding:
     fld = profile.get("colour_space")
     if not fld.is_known:
-        return Finding("colour_space", PENDING, "Colour space not supplied by printer.")
+        return Finding("colour_space", PENDING, "Colour space not supplied by printer.",
+                       resolution=BY_PRINTER_ANSWER)
     is_rgb = asset.mode in ("RGBA", "RGB")
     verdict = PASS if is_rgb else FAIL
     return Finding(
@@ -190,7 +259,7 @@ def check_alpha_quality(asset: AssetUnderTest, profile: PrinterProfile,
             "alpha_quality", PENDING,
             f"Soft (non-edge) partial alpha measured at {stats.soft_ratio:.4%} of inked pixels. "
             "Printer tolerance unknown — to be established by the calibration alpha step wedge.",
-            detail,
+            detail, resolution=BY_CALIBRATION,
         )
     verdict = PASS if stats.soft_ratio <= tol.value else FAIL
     return Finding(
@@ -215,7 +284,8 @@ def check_effective_dpi(asset: AssetUnderTest, profile: PrinterProfile) -> Findi
     }
     if not fld.is_known:
         return Finding("effective_dpi", PENDING,
-                       "Required DPI not supplied by printer.", detail)
+                       "Required DPI not supplied by printer.", detail,
+                       resolution=BY_PRINTER_ANSWER)
     ok = actual_w >= fld.value - 0.5 and actual_h >= fld.value - 0.5
     return Finding(
         "effective_dpi", PASS if ok else FAIL,
@@ -235,7 +305,8 @@ def check_max_dimensions(asset: AssetUnderTest, profile: PrinterProfile) -> list
         if not fld.is_known:
             out.append(Finding(f"max_{label}", PENDING,
                                f"Maximum {label} not supplied by printer.",
-                               {f"declared_{label}_mm": round(declared, 2)}))
+                               {f"declared_{label}_mm": round(declared, 2)},
+                               resolution=BY_PRINTER_ANSWER))
         elif declared <= fld.value:
             out.append(Finding(f"max_{label}", PASS,
                                f"{declared:.1f} mm within maximum {fld.value} mm."))
@@ -265,7 +336,7 @@ def check_minimum_feature(asset: AssetUnderTest, profile: PrinterProfile,
             "minimum_feature", PENDING,
             f"Thinnest stroke (1st percentile) measured at {p1_mm:.3f} mm. "
             "Printer minimum unknown — to be established by the calibration stroke ladder.",
-            detail,
+            detail, resolution=BY_CALIBRATION,
         )
     verdict = PASS if p1_mm >= fld.value else FAIL
     return Finding(

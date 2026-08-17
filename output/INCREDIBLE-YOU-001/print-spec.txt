@@ -15,12 +15,12 @@ PLEASE PLACE BOTH FILES ON THE SAME GANG SHEET / BATCH.
 FILE 1 - PRODUCTION ARTWORK
 ------------------------------------------------------------------------------
   Filename          : PRINT/incredible-you-001.png
-  Print size        : 280.1 mm wide x 101.8 mm high
-  Pixel dimensions  : 3308 x 1202 px
+  Print size        : 280.1 mm wide x 270.0 mm high
+  Pixel dimensions  : 3308 x 3189 px
   Resolution        : 300 DPI at the size above
   Colour            : RGB / sRGB, 8-bit, with alpha
   Background        : fully transparent
-  SHA-256           : 4443ce1048a5c62800f59172cbfd1cbbd24dd84d87102596b5af1da4d95bbf70
+  SHA-256           : dc34fef81a609a16546bbf797b6fafd7d87bd06868784c957d8568d29aa0b09e
 
   Garment           : black T-shirt, size TBC
   Placement         : large centred front
@@ -68,19 +68,20 @@ PRINTER PROFILE STATE
 ------------------------------------------------------------------------------
 VALIDATION SUMMARY
 ------------------------------------------------------------------------------
-  incredible-you-001.png: print_ready=True  {'PASS': 9, 'PENDING': 4}
-    [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at 0.0032% of inked pixels. Printer tolerance unknown — to be established by the calibration alpha step wedge.
+  incredible-you-001.png: READY_FOR_CALIBRATION  {'PASS': 9, 'PENDING': 4}
+    [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at 0.0002% of inked pixels. Printer tolerance unknown — to be established by the calibration alpha step wedge.
     [PENDING] max_width: Maximum width not supplied by printer.
     [PENDING] max_height: Maximum height not supplied by printer.
     [PENDING] minimum_feature: Thinnest stroke (1st percentile) measured at 2.032 mm. Printer minimum unknown — to be established by the calibration stroke ladder.
-  calibration-v1.png: print_ready=True  {'PASS': 11, 'PENDING': 4}
+  calibration-v1.png: READY_FOR_CALIBRATION  {'PASS': 11, 'PENDING': 4}
     [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at 19.8755% of inked pixels. Printer tolerance unknown — to be established by the calibration alpha step wedge.
     [PENDING] max_width: Maximum width not supplied by printer.
     [PENDING] max_height: Maximum height not supplied by printer.
     [PENDING] minimum_feature: Thinnest stroke (1st percentile) measured at 0.085 mm. Printer minimum unknown — to be established by the calibration stroke ladder.
 
-  PENDING means the check could not run because the tolerance is not yet
-  known. It is not a pass. Those tolerances are what this calibration
-  transfer is intended to establish.
+  READY_FOR_CALIBRATION means: no failures, and safe to print as part of
+  this calibration run - but NOT yet proven print-ready, because some
+  checks could not run against a real tolerance. PENDING is not a pass.
+  Establishing those tolerances is exactly what this transfer is for.
 
 ==============================================================================

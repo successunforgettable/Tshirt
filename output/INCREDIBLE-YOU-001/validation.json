@@ -2,10 +2,22 @@
   "reports": [
     {
       "asset": "incredible-you-001.png",
-      "print_ready": true,
+      "readiness": "READY_FOR_CALIBRATION",
+      "print_ready": false,
+      "can_send_for_calibration": true,
       "counts": {
         "PASS": 9,
         "PENDING": 4
+      },
+      "unresolved": {
+        "awaiting_calibration": [
+          "alpha_quality",
+          "minimum_feature"
+        ],
+        "awaiting_printer_answer": [
+          "max_width",
+          "max_height"
+        ]
       },
       "findings": [
         {
@@ -39,10 +51,10 @@
         {
           "check": "transparency_present",
           "verdict": "PASS",
-          "message": "3,169,848 transparent pixels (79.7% of canvas).",
+          "message": "8,506,239 transparent pixels (80.6% of canvas).",
           "detail": {
-            "transparent_px": 3169848,
-            "total_px": 3976216
+            "transparent_px": 8506239,
+            "total_px": 10549212
           }
         },
         {
@@ -54,15 +66,16 @@
         {
           "check": "alpha_quality",
           "verdict": "PENDING",
-          "message": "Soft (non-edge) partial alpha measured at 0.0032% of inked pixels. Printer tolerance unknown \u2014 to be established by the calibration alpha step wedge.",
+          "message": "Soft (non-edge) partial alpha measured at 0.0002% of inked pixels. Printer tolerance unknown \u2014 to be established by the calibration alpha step wedge.",
           "detail": {
-            "inked_px": 806368,
-            "partial_px": 18822,
-            "partial_ratio": 0.023342,
-            "soft_px": 26,
-            "soft_ratio": 3.2e-05,
+            "inked_px": 2042973,
+            "partial_px": 29752,
+            "partial_ratio": 0.014563,
+            "soft_px": 4,
+            "soft_ratio": 2e-06,
             "edge_band_px": 3
-          }
+          },
+          "resolution": "calibration"
         },
         {
           "check": "effective_dpi",
@@ -72,9 +85,9 @@
             "effective_dpi_width": 300.0,
             "effective_dpi_height": 300.0,
             "width_px": 3308,
-            "height_px": 1202,
+            "height_px": 3189,
             "declared_width_mm": 280.077,
-            "declared_height_mm": 101.769,
+            "declared_height_mm": 270.002,
             "required_dpi": 300,
             "required_dpi_status": "assumed"
           }
@@ -85,15 +98,17 @@
           "message": "Maximum width not supplied by printer.",
           "detail": {
             "declared_width_mm": 280.08
-          }
+          },
+          "resolution": "printer_answer"
         },
         {
           "check": "max_height",
           "verdict": "PENDING",
           "message": "Maximum height not supplied by printer.",
           "detail": {
-            "declared_height_mm": 101.77
-          }
+            "declared_height_mm": 270.0
+          },
+          "resolution": "printer_answer"
         },
         {
           "check": "minimum_feature",
@@ -107,7 +122,8 @@
             "method_notes": [
               "Run-length method: exact for axis-aligned strokes, overestimates diagonals by up to sqrt(2). Lower-bound safe; not exact."
             ]
-          }
+          },
+          "resolution": "calibration"
         },
         {
           "check": "rendered_bounds",
@@ -116,18 +132,18 @@
           "detail": {
             "canvas_px": [
               3308,
-              1202
+              3189
             ],
             "inked_bbox": {
               "left": 0,
               "top": 0,
               "right": 3307,
-              "bottom": 1201,
+              "bottom": 3188,
               "width": 3308,
-              "height": 1202
+              "height": 3189
             },
             "inked_width_mm": 280.077,
-            "inked_height_mm": 101.769,
+            "inked_height_mm": 270.002,
             "transparent_margin_px": {
               "left_px": 0,
               "top_px": 0,
@@ -155,10 +171,22 @@
     },
     {
       "asset": "calibration-v1.png",
-      "print_ready": true,
+      "readiness": "READY_FOR_CALIBRATION",
+      "print_ready": false,
+      "can_send_for_calibration": true,
       "counts": {
         "PASS": 11,
         "PENDING": 4
+      },
+      "unresolved": {
+        "awaiting_calibration": [
+          "alpha_quality",
+          "minimum_feature"
+        ],
+        "awaiting_printer_answer": [
+          "max_width",
+          "max_height"
+        ]
       },
       "findings": [
         {
@@ -215,7 +243,8 @@
             "soft_px": 485066,
             "soft_ratio": 0.198755,
             "edge_band_px": 3
-          }
+          },
+          "resolution": "calibration"
         },
         {
           "check": "effective_dpi",
@@ -238,7 +267,8 @@
           "message": "Maximum width not supplied by printer.",
           "detail": {
             "declared_width_mm": 199.98
-          }
+          },
+          "resolution": "printer_answer"
         },
         {
           "check": "max_height",
@@ -246,7 +276,8 @@
           "message": "Maximum height not supplied by printer.",
           "detail": {
             "declared_height_mm": 330.62
-          }
+          },
+          "resolution": "printer_answer"
         },
         {
           "check": "minimum_feature",
@@ -260,7 +291,8 @@
             "method_notes": [
               "Run-length method: exact for axis-aligned strokes, overestimates diagonals by up to sqrt(2). Lower-bound safe; not exact."
             ]
-          }
+          },
+          "resolution": "calibration"
         },
         {
           "check": "rendered_bounds",

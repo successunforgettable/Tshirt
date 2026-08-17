@@ -36,8 +36,18 @@ rather than a model.
 .venv/bin/python -m tshirt.cli.main build
 ```
 
-Writes `output/INCREDIBLE-YOU-001/` — two print-ready PNGs, a human-readable print spec,
-a manifest with checksums, and a validation report. Exits non-zero if validation fails.
+Writes `output/INCREDIBLE-YOU-001/` — two PNGs, a human-readable print spec, a manifest
+with checksums, and a validation report. Exits non-zero only on `NOT_READY`.
+
+Assets roll up to one of three states rather than a boolean:
+
+| State | Meaning |
+|---|---|
+| `NOT_READY` | A FAIL is present. Do not send. |
+| `READY_FOR_CALIBRATION` | No FAIL, but checks remain unresolved. Sendable as part of a calibration run; **not** proven print-ready. |
+| `PRINT_READY` | No FAIL and nothing unresolved. Every required check ran against a real threshold and passed. |
+
+Gate 1a assets are `READY_FOR_CALIBRATION`. Any single PENDING withholds `PRINT_READY`.
 
 ## Test
 
@@ -71,8 +81,8 @@ underneath it.
 - **AI-rendered wording never enters a production asset** (D-06). Final text is composited
   from a pinned OFL-licensed font and byte-matched against Brand DNA before export.
 - **Unknown tolerances are never invented** (D-11). A check with no supplied threshold
-  reports `PENDING`, which is not a pass. The calibration transfer is what turns those
-  into real thresholds.
+  reports `PENDING`, which is not a pass and never rolls up to `PRINT_READY`. The
+  calibration transfer is what turns those into real thresholds.
 - **Proprietary vocabulary stays semantically opaque** (D-16). Terms with `meaning: null`
   may be set as exact text but must never drive visual metaphor.
 - **Brand marks are placed assets, never generated** (D-17). The canonical brand *name* is

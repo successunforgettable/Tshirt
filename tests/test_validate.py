@@ -46,6 +46,16 @@ def make_asset(**kw) -> validate.AssetUnderTest:
     return validate.AssetUnderTest(**defaults)
 
 
+def fully_resolved_profile() -> PrinterProfile:
+    """A profile where every tolerance is known — the only route to PRINT_READY."""
+    return make_profile(
+        max_width_mm=Field("max_width_mm", 560.0, CONFIRMED),
+        max_height_mm=Field("max_height_mm", 1000.0, CONFIRMED),
+        min_reliable_stroke_mm=Field("min_reliable_stroke_mm", 0.5, CONFIRMED),
+        max_partial_alpha_ratio=Field("max_partial_alpha_ratio", 0.05, CONFIRMED),
+    )
+
+
 class TestPendingIsNotPass(unittest.TestCase):
     """The core anti-invention guarantee."""
 
@@ -69,17 +79,91 @@ class TestPendingIsNotPass(unittest.TestCase):
         self.assertEqual(verdicts["max_width"], validate.PENDING)
         self.assertEqual(verdicts["max_height"], validate.PENDING)
 
-    def test_pending_does_not_block_export(self):
-        report = validate.validate(make_asset(), make_profile())
-        self.assertTrue(report.pending)
-        self.assertTrue(report.is_print_ready)
-
     def test_known_threshold_produces_a_real_verdict(self):
         profile = make_profile(
             min_reliable_stroke_mm=Field("min_reliable_stroke_mm", 0.5, CONFIRMED))
         report = validate.validate(make_asset(), profile)
         f = next(x for x in report.findings if x.check == "minimum_feature")
         self.assertIn(f.verdict, (validate.PASS, validate.FAIL))
+
+
+class TestReadinessModel(unittest.TestCase):
+    """Three states. A boolean would have to lie about one of them."""
+
+    def test_pending_withholds_print_ready(self):
+        report = validate.validate(make_asset(), make_profile())
+        self.assertTrue(report.pending)
+        self.assertEqual(report.readiness, validate.READY_FOR_CALIBRATION)
+        self.assertFalse(report.is_print_ready,
+                         "an asset with unresolved checks must never be print_ready")
+
+    def test_ready_for_calibration_is_still_sendable(self):
+        report = validate.validate(make_asset(), make_profile())
+        self.assertTrue(report.can_send_for_calibration)
+
+    def test_failure_yields_not_ready(self):
+        report = validate.validate(make_asset(image_format="TIFF"), make_profile())
+        self.assertEqual(report.readiness, validate.NOT_READY)
+        self.assertFalse(report.can_send_for_calibration)
+        self.assertFalse(report.is_print_ready)
+
+    def test_failure_dominates_pending(self):
+        """A FAIL alongside PENDING is NOT_READY, not READY_FOR_CALIBRATION."""
+        report = validate.validate(make_asset(image_format="TIFF"), make_profile())
+        self.assertTrue(report.pending)
+        self.assertEqual(report.readiness, validate.NOT_READY)
+
+    def test_print_ready_only_when_nothing_is_unresolved(self):
+        report = validate.validate(make_asset(), fully_resolved_profile())
+        self.assertEqual(report.pending, [])
+        self.assertEqual(report.readiness, validate.PRINT_READY)
+        self.assertTrue(report.is_print_ready)
+
+    def test_a_single_pending_is_enough_to_withhold_print_ready(self):
+        profile = fully_resolved_profile()
+        profile.fields["min_reliable_stroke_mm"] = Field(
+            "min_reliable_stroke_mm", None, UNKNOWN)
+        report = validate.validate(make_asset(), profile)
+        self.assertEqual(len(report.pending), 1)
+        self.assertEqual(report.readiness, validate.READY_FOR_CALIBRATION)
+        self.assertFalse(report.is_print_ready)
+
+    def test_warnings_do_not_withhold_print_ready(self):
+        arr = make_rgba()
+        arr[0, 0, :3] = 255
+        arr[0, 0, 3] = 0
+        report = validate.validate(make_asset(rgba=arr), fully_resolved_profile())
+        self.assertTrue(report.warnings)
+        self.assertEqual(report.readiness, validate.PRINT_READY)
+
+
+class TestResolutionPaths(unittest.TestCase):
+    """Unresolved checks are separated by who resolves them."""
+
+    def setUp(self):
+        self.report = validate.validate(make_asset(), make_profile())
+
+    def test_tolerances_are_resolved_by_calibration(self):
+        checks = {f.check for f in self.report.awaiting_calibration}
+        self.assertEqual(checks, {"minimum_feature", "alpha_quality"})
+
+    def test_printer_limits_are_resolved_by_asking(self):
+        checks = {f.check for f in self.report.awaiting_printer_answer}
+        self.assertEqual(checks, {"max_width", "max_height"})
+
+    def test_every_pending_declares_a_resolution_path(self):
+        for f in self.report.pending:
+            self.assertIn(f.resolution,
+                          (validate.BY_CALIBRATION, validate.BY_PRINTER_ANSWER),
+                          f"{f.check} has no resolution path")
+
+    def test_summary_exposes_readiness_and_unresolved(self):
+        s = self.report.summary()
+        self.assertEqual(s["readiness"], validate.READY_FOR_CALIBRATION)
+        self.assertFalse(s["print_ready"])
+        self.assertTrue(s["can_send_for_calibration"])
+        self.assertEqual(sorted(s["unresolved"]["awaiting_calibration"]),
+                         ["alpha_quality", "minimum_feature"])
 
 
 class TestAuthoritativeStrings(unittest.TestCase):
@@ -170,7 +254,7 @@ class TestTransparency(unittest.TestCase):
                                               declared_height_mm=8.47), make_profile())
         f = next(x for x in report.findings if x.check == "transparency_present")
         self.assertEqual(f.verdict, validate.FAIL)
-        self.assertFalse(report.is_print_ready)
+        self.assertEqual(report.readiness, validate.NOT_READY)
 
     def test_non_rgba_mode_fails(self):
         report = validate.validate(make_asset(mode="RGB"), make_profile())
@@ -235,9 +319,10 @@ class TestRenderedBounds(unittest.TestCase):
 
 
 class TestReport(unittest.TestCase):
-    def test_failures_block_print_ready(self):
+    def test_failures_block_everything(self):
         report = validate.validate(make_asset(image_format="TIFF"), make_profile())
         self.assertFalse(report.is_print_ready)
+        self.assertEqual(report.readiness, validate.NOT_READY)
 
     def test_summary_is_json_serialisable(self):
         import json

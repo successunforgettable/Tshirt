@@ -49,6 +49,39 @@ class TestComposition(unittest.TestCase):
         self.assertNotEqual(self.result.image.height, self.result.image.width)
         self.assertGreater(self.result.image.height, 0)
 
+    def test_is_a_large_centre_front_block_not_a_shallow_banner(self):
+        """A wide chest banner is not representative of the intended product."""
+        aspect = self.result.image.width / self.result.image.height
+        self.assertLess(aspect, 1.4, f"too shallow for a centre-front print: {aspect:.2f}:1")
+        self.assertGreater(aspect, 0.7, f"unexpectedly tall: {aspect:.2f}:1")
+
+    def test_height_is_substantial_on_a_garment(self):
+        mm = size.px_to_mm(self.result.image.height, DPI)
+        self.assertGreater(mm, 200.0, "centre-front design should have real vertical presence")
+        self.assertLess(mm, 400.0, "must fit a normal adult tee print area")
+
+    def test_the_and_you_are_treated_identically(self):
+        """Equal treatment keeps the hierarchy clearly distinct from the identity (D-17).
+
+        Inked heights are compared with tolerance rather than for equality: THE is
+        entirely flat-topped, while the round O in YOU carries the usual optical
+        overshoot above cap height and below the baseline. Both lines are set at
+        the same font size, which is what "identical treatment" actually means.
+        """
+        lines = self.result.layout["lines"]
+        the_h, you_h = lines["THE"]["height"], lines["YOU"]["height"]
+        drift = abs(the_h - you_h) / max(the_h, you_h)
+        self.assertLess(drift, 0.05,
+                        f"THE and YOU differ by {drift:.1%} — more than round-letter overshoot")
+        self.assertGreater(self.result.layout["sub_font_size_px"],
+                           self.result.layout["main_font_size_px"])
+
+    def test_all_lines_justified_to_the_same_measure(self):
+        lines = self.result.layout["lines"]
+        widths = [lines[k]["width"] for k in ("THE", "INCREDIBLE", "YOU")]
+        for w in widths:
+            self.assertGreater(w / self.target_px, 0.97, "line not justified to the measure")
+
     def test_renders_the_authoritative_string(self):
         self.assertIn("THE INCREDIBLE YOU", self.result.rendered_strings)
 

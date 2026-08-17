@@ -138,14 +138,15 @@ def write_print_spec(path: str | Path, design: PackagedAsset, calibration: Packa
     a("-" * 78)
     for r in reports:
         s = r.summary()
-        a(f"  {r.asset}: print_ready={s['print_ready']}  {s['counts']}")
+        a(f"  {r.asset}: {s['readiness']}  {s['counts']}")
         for f in r.findings:
             if f.verdict in ("FAIL", "WARNING", "PENDING"):
                 a(f"    [{f.verdict}] {f.check}: {f.message}")
     a("")
-    a("  PENDING means the check could not run because the tolerance is not yet")
-    a("  known. It is not a pass. Those tolerances are what this calibration")
-    a("  transfer is intended to establish.")
+    a("  READY_FOR_CALIBRATION means: no failures, and safe to print as part of")
+    a("  this calibration run - but NOT yet proven print-ready, because some")
+    a("  checks could not run against a real tolerance. PENDING is not a pass.")
+    a("  Establishing those tolerances is exactly what this transfer is for.")
     a("")
     a("=" * 78)
 
