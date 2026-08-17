@@ -32,8 +32,9 @@ PIPELINE_VERSION = "gate-1a.1"
 GARMENT = {
     "type": "T-shirt",
     "colour": "black",
-    "size": "TBC",
+    "size": "M",
     "placement": "large centred front",
+    "size_source": "product owner, 2026-08-17",
 }
 
 

@@ -13,8 +13,9 @@
     "garment": {
       "type": "T-shirt",
       "colour": "black",
-      "size": "TBC",
-      "placement": "large centred front"
+      "size": "M",
+      "placement": "large centred front",
+      "size_source": "product owner, 2026-08-17"
     },
     "placement": "large centred front",
     "aesthetic": [

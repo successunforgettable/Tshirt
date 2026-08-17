@@ -22,7 +22,7 @@ FILE 1 - PRODUCTION ARTWORK
   Background        : fully transparent
   SHA-256           : dc34fef81a609a16546bbf797b6fafd7d87bd06868784c957d8568d29aa0b09e
 
-  Garment           : black T-shirt, size TBC
+  Garment           : black T-shirt, size M
   Placement         : large centred front
 
 ------------------------------------------------------------------------------

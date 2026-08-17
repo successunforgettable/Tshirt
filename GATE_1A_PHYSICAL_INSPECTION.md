@@ -37,10 +37,30 @@ Record the settings actually used — without these, a good result cannot be rep
 | Pressure | |
 | Peel (hot / warm / cold) | |
 | Second press applied? | |
-| Garment (colour, style, size) | |
+| Garment (colour, style, size) | black T-shirt, size M |
 
 **Press two identical shirts.** A single good shirt can be luck; repeatability is part of
 the proof.
+
+### Placement on a size M
+
+The artwork is **280.1 mm wide × 270.0 mm high**. Suggested starting placement:
+
+- **Horizontally:** centred on the body, measured between the side seams — not by eye.
+- **Vertically:** top edge of the upper rule about **70 mm below the collar seam**. The
+  design then finishes roughly 340 mm below the collar, around mid-torso on an M.
+
+Two things worth knowing before you press, neither of which changes the file:
+
+1. **280 mm is at the upper end of the printable width for a size M.** That is deliberate
+   — it is a large centre-front print — but it will sit close to edge-to-edge across the
+   chest. If it turns out wider than you want on the body, the fix is a smaller target
+   width in the next build, not a resize of this file.
+2. **Measure and mark before pressing.** Once bonded, placement cannot be corrected, and
+   placement error is easy to mistake for a file error when reviewing the result.
+
+Record what you actually used: distance below collar ______ mm, centred by ______
+(seam measurement / eye).
 
 ---
 
