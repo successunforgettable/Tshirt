@@ -1,0 +1,3 @@
+# Gate 1a runtime dependencies. Two packages, both permissively licensed.
+Pillow==12.3.0    # HPND  — compositing, text rendering, RGBA/PNG I/O
+numpy==2.4.6      # BSD-3 — alpha and stroke analysis over large images

@@ -1,0 +1,337 @@
+{
+  "reports": [
+    {
+      "asset": "incredible-you-001.png",
+      "print_ready": true,
+      "counts": {
+        "PASS": 9,
+        "PENDING": 4
+      },
+      "findings": [
+        {
+          "check": "format",
+          "verdict": "PASS",
+          "message": "PNG is accepted.",
+          "detail": {
+            "format": "PNG",
+            "accepted": [
+              "PNG"
+            ],
+            "status": "confirmed"
+          }
+        },
+        {
+          "check": "colour_space",
+          "verdict": "PASS",
+          "message": "Image mode RGBA against profile sRGB (assumed).",
+          "detail": {
+            "mode": "RGBA",
+            "profile_value": "sRGB",
+            "profile_status": "assumed"
+          }
+        },
+        {
+          "check": "alpha_channel",
+          "verdict": "PASS",
+          "message": "RGBA alpha channel present.",
+          "detail": {}
+        },
+        {
+          "check": "transparency_present",
+          "verdict": "PASS",
+          "message": "3,169,848 transparent pixels (79.7% of canvas).",
+          "detail": {
+            "transparent_px": 3169848,
+            "total_px": 3976216
+          }
+        },
+        {
+          "check": "stray_colour_in_transparent",
+          "verdict": "PASS",
+          "message": "No colour data in fully transparent pixels.",
+          "detail": {}
+        },
+        {
+          "check": "alpha_quality",
+          "verdict": "PENDING",
+          "message": "Soft (non-edge) partial alpha measured at 0.0032% of inked pixels. Printer tolerance unknown \u2014 to be established by the calibration alpha step wedge.",
+          "detail": {
+            "inked_px": 806368,
+            "partial_px": 18822,
+            "partial_ratio": 0.023342,
+            "soft_px": 26,
+            "soft_ratio": 3.2e-05,
+            "edge_band_px": 3
+          }
+        },
+        {
+          "check": "effective_dpi",
+          "verdict": "PASS",
+          "message": "Computed 300.0 x 300.0 DPI against required 300 (assumed).",
+          "detail": {
+            "effective_dpi_width": 300.0,
+            "effective_dpi_height": 300.0,
+            "width_px": 3308,
+            "height_px": 1202,
+            "declared_width_mm": 280.077,
+            "declared_height_mm": 101.769,
+            "required_dpi": 300,
+            "required_dpi_status": "assumed"
+          }
+        },
+        {
+          "check": "max_width",
+          "verdict": "PENDING",
+          "message": "Maximum width not supplied by printer.",
+          "detail": {
+            "declared_width_mm": 280.08
+          }
+        },
+        {
+          "check": "max_height",
+          "verdict": "PENDING",
+          "message": "Maximum height not supplied by printer.",
+          "detail": {
+            "declared_height_mm": 101.77
+          }
+        },
+        {
+          "check": "minimum_feature",
+          "verdict": "PENDING",
+          "message": "Thinnest stroke (1st percentile) measured at 2.032 mm. Printer minimum unknown \u2014 to be established by the calibration stroke ladder.",
+          "detail": {
+            "p1_stroke_px": 24.0,
+            "p1_stroke_mm": 2.032,
+            "min_stroke_px": 1,
+            "min_stroke_mm": 0.0847,
+            "method_notes": [
+              "Run-length method: exact for axis-aligned strokes, overestimates diagonals by up to sqrt(2). Lower-bound safe; not exact."
+            ]
+          }
+        },
+        {
+          "check": "rendered_bounds",
+          "verdict": "PASS",
+          "message": "Ink extends to every canvas edge: declared size is the artwork size.",
+          "detail": {
+            "canvas_px": [
+              3308,
+              1202
+            ],
+            "inked_bbox": {
+              "left": 0,
+              "top": 0,
+              "right": 3307,
+              "bottom": 1201,
+              "width": 3308,
+              "height": 1202
+            },
+            "inked_width_mm": 280.077,
+            "inked_height_mm": 101.769,
+            "transparent_margin_px": {
+              "left_px": 0,
+              "top_px": 0,
+              "right_px": 0,
+              "bottom_px": 0
+            }
+          }
+        },
+        {
+          "check": "authoritative_string",
+          "verdict": "PASS",
+          "message": "Exact match rendered as a complete string: 'THE INCREDIBLE YOU'",
+          "detail": {
+            "expected": "THE INCREDIBLE YOU",
+            "match": "whole_string"
+          }
+        },
+        {
+          "check": "glyph_coverage",
+          "verdict": "PASS",
+          "message": "Font provides a glyph for every character rendered.",
+          "detail": {}
+        }
+      ]
+    },
+    {
+      "asset": "calibration-v1.png",
+      "print_ready": true,
+      "counts": {
+        "PASS": 11,
+        "PENDING": 4
+      },
+      "findings": [
+        {
+          "check": "format",
+          "verdict": "PASS",
+          "message": "PNG is accepted.",
+          "detail": {
+            "format": "PNG",
+            "accepted": [
+              "PNG"
+            ],
+            "status": "confirmed"
+          }
+        },
+        {
+          "check": "colour_space",
+          "verdict": "PASS",
+          "message": "Image mode RGBA against profile sRGB (assumed).",
+          "detail": {
+            "mode": "RGBA",
+            "profile_value": "sRGB",
+            "profile_status": "assumed"
+          }
+        },
+        {
+          "check": "alpha_channel",
+          "verdict": "PASS",
+          "message": "RGBA alpha channel present.",
+          "detail": {}
+        },
+        {
+          "check": "transparency_present",
+          "verdict": "PASS",
+          "message": "6,783,093 transparent pixels (73.5% of canvas).",
+          "detail": {
+            "transparent_px": 6783093,
+            "total_px": 9223610
+          }
+        },
+        {
+          "check": "stray_colour_in_transparent",
+          "verdict": "PASS",
+          "message": "No colour data in fully transparent pixels.",
+          "detail": {}
+        },
+        {
+          "check": "alpha_quality",
+          "verdict": "PENDING",
+          "message": "Soft (non-edge) partial alpha measured at 19.8755% of inked pixels. Printer tolerance unknown \u2014 to be established by the calibration alpha step wedge.",
+          "detail": {
+            "inked_px": 2440517,
+            "partial_px": 582720,
+            "partial_ratio": 0.238769,
+            "soft_px": 485066,
+            "soft_ratio": 0.198755,
+            "edge_band_px": 3
+          }
+        },
+        {
+          "check": "effective_dpi",
+          "verdict": "PASS",
+          "message": "Computed 300.0 x 300.0 DPI against required 300 (assumed).",
+          "detail": {
+            "effective_dpi_width": 300.0,
+            "effective_dpi_height": 300.0,
+            "width_px": 2362,
+            "height_px": 3905,
+            "declared_width_mm": 199.983,
+            "declared_height_mm": 330.623,
+            "required_dpi": 300,
+            "required_dpi_status": "assumed"
+          }
+        },
+        {
+          "check": "max_width",
+          "verdict": "PENDING",
+          "message": "Maximum width not supplied by printer.",
+          "detail": {
+            "declared_width_mm": 199.98
+          }
+        },
+        {
+          "check": "max_height",
+          "verdict": "PENDING",
+          "message": "Maximum height not supplied by printer.",
+          "detail": {
+            "declared_height_mm": 330.62
+          }
+        },
+        {
+          "check": "minimum_feature",
+          "verdict": "PENDING",
+          "message": "Thinnest stroke (1st percentile) measured at 0.085 mm. Printer minimum unknown \u2014 to be established by the calibration stroke ladder.",
+          "detail": {
+            "p1_stroke_px": 1.0,
+            "p1_stroke_mm": 0.0847,
+            "min_stroke_px": 1,
+            "min_stroke_mm": 0.0847,
+            "method_notes": [
+              "Run-length method: exact for axis-aligned strokes, overestimates diagonals by up to sqrt(2). Lower-bound safe; not exact."
+            ]
+          }
+        },
+        {
+          "check": "rendered_bounds",
+          "verdict": "PASS",
+          "message": "Ink extends to every canvas edge: declared size is the artwork size.",
+          "detail": {
+            "canvas_px": [
+              2362,
+              3905
+            ],
+            "inked_bbox": {
+              "left": 0,
+              "top": 0,
+              "right": 2361,
+              "bottom": 3904,
+              "width": 2362,
+              "height": 3905
+            },
+            "inked_width_mm": 199.983,
+            "inked_height_mm": 330.623,
+            "transparent_margin_px": {
+              "left_px": 0,
+              "top_px": 0,
+              "right_px": 0,
+              "bottom_px": 0
+            }
+          }
+        },
+        {
+          "check": "authoritative_string",
+          "verdict": "PASS",
+          "message": "Exact match rendered within: 'N-Codes  E-Codes  Inner DNA'",
+          "detail": {
+            "expected": "N-Codes",
+            "match": "token",
+            "carriers": [
+              "N-Codes  E-Codes  Inner DNA"
+            ]
+          }
+        },
+        {
+          "check": "authoritative_string",
+          "verdict": "PASS",
+          "message": "Exact match rendered within: 'N-Codes  E-Codes  Inner DNA'",
+          "detail": {
+            "expected": "E-Codes",
+            "match": "token",
+            "carriers": [
+              "N-Codes  E-Codes  Inner DNA"
+            ]
+          }
+        },
+        {
+          "check": "authoritative_string",
+          "verdict": "PASS",
+          "message": "Exact match rendered within: 'N-Codes  E-Codes  Inner DNA'",
+          "detail": {
+            "expected": "Inner DNA",
+            "match": "token",
+            "carriers": [
+              "N-Codes  E-Codes  Inner DNA"
+            ]
+          }
+        },
+        {
+          "check": "glyph_coverage",
+          "verdict": "PASS",
+          "message": "Font provides a glyph for every character rendered.",
+          "detail": {}
+        }
+      ]
+    }
+  ]
+}

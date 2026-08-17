@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "name": "Printer A",
+  "created": "2026-08-17",
+  "gate": "1a",
+
+  "_field_status_legend": {
+    "confirmed": "Stated by the real printer. Authoritative.",
+    "assumed": "Conventional DTF working baseline adopted for the calibration experiment ONLY. NOT a printer-confirmed requirement. Must be confirmed or disproved by the Gate 1a physical transfer.",
+    "unknown": "Not supplied and not assumed. Checks depending on this field report PENDING, never PASS or FAIL. Tolerances are never invented (D-11)."
+  },
+
+  "fields": {
+    "process": {
+      "value": "DTF",
+      "status": "confirmed",
+      "source": "printer, 2026-08-17"
+    },
+    "accepted_formats": {
+      "value": ["PNG"],
+      "status": "confirmed",
+      "source": "printer, 2026-08-16: 'PNG without background'"
+    },
+    "preferred_format": {
+      "value": "PNG",
+      "status": "confirmed",
+      "source": "printer, 2026-08-16: 'PNG without background'"
+    },
+    "requires_transparency": {
+      "value": true,
+      "status": "confirmed",
+      "source": "printer, 2026-08-16: 'PNG without background'"
+    },
+
+    "required_dpi": {
+      "value": 300,
+      "status": "assumed",
+      "source": "conventional DTF working baseline",
+      "confirm_via": "Calibration ruler and stroke ladder — measure whether 300 DPI detail survives."
+    },
+    "colour_space": {
+      "value": "sRGB",
+      "status": "assumed",
+      "source": "conventional DTF working baseline (RIP converts to CMYK+white)",
+      "confirm_via": "Calibration red sweep and greyscale wedge — measure colour drift."
+    },
+    "rip_handles_mirroring": {
+      "value": true,
+      "status": "assumed",
+      "source": "conventional DTF working baseline — artwork supplied unmirrored",
+      "confirm_via": "Calibration asymmetric orientation marker — if it reads reversed, this assumption is wrong."
+    },
+
+    "max_width_mm": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Printer checklist Q4."
+    },
+    "max_height_mm": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Printer checklist Q4."
+    },
+    "min_reliable_stroke_mm": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Calibration stroke ladder — measure the finest stroke that survives transfer."
+    },
+    "max_partial_alpha_ratio": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Calibration alpha step wedge and hard-edge/fade pair — measure where the white underbase turns to haze."
+    },
+    "white_underbase_behaviour": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Calibration white-density test and alpha step wedge."
+    },
+    "min_negative_space_mm": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Calibration negative-space/counter test — measure the smallest gap that does not fill in."
+    },
+    "printer_resizes_files": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Calibration 100 mm ruler — physically measure after pressing."
+    },
+    "cutting_responsibility": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Printer checklist Q11."
+    },
+    "cost_per_transfer": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Printer checklist Q12."
+    },
+    "turnaround": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Printer checklist Q13."
+    },
+    "special_instructions": {
+      "value": null,
+      "status": "unknown",
+      "confirm_via": "Printer checklist Q14."
+    }
+  },
+
+  "custom_requirements": {}
+}

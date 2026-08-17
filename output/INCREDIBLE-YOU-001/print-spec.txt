@@ -1,0 +1,86 @@
+==============================================================================
+PRINT SPECIFICATION - THE INCREDIBLE YOU 001
+==============================================================================
+
+PROCESS: DTF transfer (confirmed by printer)
+
+*** DO NOT RESIZE. Both files are built at exact final print size. ***
+*** DO NOT MIRROR. Artwork is supplied UNMIRRORED; we understand your
+    RIP handles transfer mirroring. If that is wrong, please tell us
+    BEFORE printing rather than mirroring the file yourself. ***
+
+PLEASE PLACE BOTH FILES ON THE SAME GANG SHEET / BATCH.
+
+------------------------------------------------------------------------------
+FILE 1 - PRODUCTION ARTWORK
+------------------------------------------------------------------------------
+  Filename          : PRINT/incredible-you-001.png
+  Print size        : 280.1 mm wide x 101.8 mm high
+  Pixel dimensions  : 3308 x 1202 px
+  Resolution        : 300 DPI at the size above
+  Colour            : RGB / sRGB, 8-bit, with alpha
+  Background        : fully transparent
+  SHA-256           : 4443ce1048a5c62800f59172cbfd1cbbd24dd84d87102596b5af1da4d95bbf70
+
+  Garment           : black T-shirt, size TBC
+  Placement         : large centred front
+
+------------------------------------------------------------------------------
+FILE 2 - CALIBRATION SHEET
+------------------------------------------------------------------------------
+  Filename          : PRINT/calibration-v1.png
+  Print size        : 200.0 mm wide x 330.6 mm high
+  Pixel dimensions  : 2362 x 3905 px
+  Resolution        : 300 DPI at the size above
+  SHA-256           : 76810d32c1cda9fc2e1986eeb2c4b373f0b8786133f1fa6106a8d419e0783c80
+
+  This sheet is a measurement instrument, not a design. It lets us
+  characterise your process so future files arrive correct first time.
+  Please print it at exactly the stated size alongside File 1.
+
+------------------------------------------------------------------------------
+PRINTER PROFILE STATE
+------------------------------------------------------------------------------
+  CONFIRMED BY PRINTER:
+    - accepted_formats: ['PNG']
+    - preferred_format: PNG
+    - process: DTF
+    - requires_transparency: True
+
+  WORKING ASSUMPTIONS - NOT CONFIRMED:
+    - colour_space: sRGB
+    - required_dpi: 300
+    - rip_handles_mirroring: True
+
+  UNKNOWN - AWAITING MEASUREMENT:
+    - cost_per_transfer: not supplied
+    - cutting_responsibility: not supplied
+    - max_height_mm: not supplied
+    - max_partial_alpha_ratio: not supplied
+    - max_width_mm: not supplied
+    - min_negative_space_mm: not supplied
+    - min_reliable_stroke_mm: not supplied
+    - printer_resizes_files: not supplied
+    - special_instructions: not supplied
+    - turnaround: not supplied
+    - white_underbase_behaviour: not supplied
+
+------------------------------------------------------------------------------
+VALIDATION SUMMARY
+------------------------------------------------------------------------------
+  incredible-you-001.png: print_ready=True  {'PASS': 9, 'PENDING': 4}
+    [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at 0.0032% of inked pixels. Printer tolerance unknown — to be established by the calibration alpha step wedge.
+    [PENDING] max_width: Maximum width not supplied by printer.
+    [PENDING] max_height: Maximum height not supplied by printer.
+    [PENDING] minimum_feature: Thinnest stroke (1st percentile) measured at 2.032 mm. Printer minimum unknown — to be established by the calibration stroke ladder.
+  calibration-v1.png: print_ready=True  {'PASS': 11, 'PENDING': 4}
+    [PENDING] alpha_quality: Soft (non-edge) partial alpha measured at 19.8755% of inked pixels. Printer tolerance unknown — to be established by the calibration alpha step wedge.
+    [PENDING] max_width: Maximum width not supplied by printer.
+    [PENDING] max_height: Maximum height not supplied by printer.
+    [PENDING] minimum_feature: Thinnest stroke (1st percentile) measured at 0.085 mm. Printer minimum unknown — to be established by the calibration stroke ladder.
+
+  PENDING means the check could not run because the tolerance is not yet
+  known. It is not a pass. Those tolerances are what this calibration
+  transfer is intended to establish.
+
+==============================================================================

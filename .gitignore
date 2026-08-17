@@ -1,0 +1,13 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Secrets — never commit
+.env
+*.key
+
+# Note: output/ is deliberately NOT ignored.
+# The engineering environment is ephemeral (D-13); Gate evidence must survive it.
