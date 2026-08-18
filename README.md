@@ -7,8 +7,8 @@ and heat press. **Physical print quality is the acceptance criterion, not screen
 |---|---|
 | `AI_TSHIRT_STUDIO_TECHNICAL_SPEC_V1.md` | Specification (v1.2) |
 | `AI_TSHIRT_STUDIO_ARCHITECTURE_DECISION_V1.md` | Locked decisions D-01…D-17 with evidence |
-| `GATE_1_PHYSICAL_PIPELINE_PLAN.md` | Physical proof plan |
-| `GATE_1A_PHYSICAL_INSPECTION.md` | Measurement record — complete after pressing |
+| `GATE_1_PHYSICAL_PIPELINE_PLAN.md` | Gate 1a / 1b boundary and PASS criteria |
+| `GATE_1A_PHYSICAL_INSPECTION.md` | Export check — complete when the transfer arrives |
 | `PRINTER_REQUIREMENTS_CHECKLIST.md` | Printer questionnaire |
 | `brand/the-incredible-you.json` | Brand DNA (data, not code) |
 | `profiles/dtf-printer-a.json` | Printer profile with confirmed/assumed/unknown status |
@@ -70,7 +70,7 @@ judged against a threshold nobody supplied, and never blocking.
 tshirt/
 ├── core/          UI-agnostic, framework-free, no network  (D-01)
 │   ├── size/      mm ⇄ px ⇄ effective DPI          — pure, no I/O
-│   ├── validate/  PASS / WARNING / FAIL / PENDING  — pure, no I/O
+│   ├── validate/  PASS / WARN / FAIL / PENDING / ADVISORY — pure, no I/O
 │   ├── analysis/  alpha, stroke and bounds measurement
 │   ├── compose/   deterministic typography         (D-06, D-07)
 │   ├── profile/   printer profile with field status
@@ -89,9 +89,10 @@ underneath it.
 
 - **AI-rendered wording never enters a production asset** (D-06). Final text is composited
   from a pinned OFL-licensed font and byte-matched against Brand DNA before export.
-- **Unknown tolerances are never invented** (D-11). A check with no supplied threshold
-  reports `PENDING`, which is not a pass and never rolls up to `PRINT_READY`. The
-  calibration transfer is what turns those into real thresholds.
+- **Unknown tolerances are never invented** (D-11). A check with no supplied threshold is
+  never reported as a pass. If it is ours to verify it reports `PENDING` and blocks; if the
+  threshold belongs to the trusted printer it reports `ADVISORY` — measured and recorded,
+  but never judged against a number nobody supplied.
 - **Proprietary vocabulary stays semantically opaque** (D-16). Terms with `meaning: null`
   may be set as exact text but must never drive visual metaphor.
 - **Brand marks are placed assets, never generated** (D-17). The canonical brand *name* is
