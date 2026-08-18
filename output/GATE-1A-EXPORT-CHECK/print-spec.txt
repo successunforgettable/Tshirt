@@ -10,7 +10,7 @@ FILE
   Colour      : RGB / sRGB, 8-bit
   Background  : fully transparent PNG
   SHA-256     :
-    c4055e7d5fdf9aab2977079e00be26a0b84ef6eb70fc6fcdb670452ded09a371
+    898a825314d47460e74cc2e62a1173d22b9be78ca8cc7c52bde356e1266b1a49
 
 PLEASE NOTE
   1. Print at exactly the stated physical size. DO NOT RESIZE.

@@ -30,7 +30,17 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-from ..core.compose import TRANSPARENT, WHITE, missing_glyphs, render_line
+from ..core.compose import TRANSPARENT, missing_glyphs, render_line
+
+# The export check is drawn in BLACK, not white.
+#
+# It is a measuring sheet, not artwork: its ink colour has no bearing on what it
+# measures. White-on-transparent looked blank in every ordinary viewer, which
+# made the file impossible to sanity-check by eye and led the print shop to ask
+# whether half of it was meant to be there. Black is visible everywhere and
+# removes that whole class of confusion. Production artwork chooses its own
+# colours; this file only has to be legible.
+INK = (0, 0, 0, 255)
 
 REFERENCE_MM = 100.0
 IP_PROBE = "N-Codes"
@@ -76,7 +86,7 @@ def build_export_check(font_path: str | Path, dpi: float = 300.0,
     regions: dict = {}
 
     def label(text: str, x: int, y: int, size_px: int = label_px) -> int:
-        img = render_line(font_path, text, size_px, 0)
+        img = render_line(font_path, text, size_px, 0, colour=INK)
         canvas.alpha_composite(img, (x, y))
         rendered.append(text)
         return img.height
@@ -86,7 +96,7 @@ def build_export_check(font_path: str | Path, dpi: float = 300.0,
     # --- title, orientation marker -------------------------------------------
     title_h = label("EXPORT CHECK v1", margin, y, _pt(15, dpi))
     ori_px = _pt(26, dpi)
-    ori = render_line(font_path, "R", ori_px, 0)
+    ori = render_line(font_path, "R", ori_px, 0, colour=INK)
     canvas.alpha_composite(ori, (W - margin - ori.width, y))
     label("ORIENT", W - margin - ori.width - _mm(17, dpi), y + _mm(2, dpi))
     regions["orientation_marker"] = {"glyph": "R", "x": W - margin - ori.width,
@@ -101,14 +111,14 @@ def build_export_check(font_path: str | Path, dpi: float = 300.0,
     ref = _mm(REFERENCE_MM, dpi)
     end_stop = _mm(4, dpi)
     vx, vy = margin, y
-    draw.rectangle([vx + end_stop // 2, vy, vx + end_stop // 2 + bar - 1, vy + ref], fill=WHITE)
+    draw.rectangle([vx + end_stop // 2, vy, vx + end_stop // 2 + bar - 1, vy + ref], fill=INK)
     for i in range(11):
         gy = vy + round(ref * i / 10)
         tick = end_stop if i % 5 == 0 else _mm(2.5, dpi)
         draw.rectangle([vx + end_stop // 2, gy, vx + end_stop // 2 + tick, gy + bar - 1],
-                       fill=WHITE)
+                       fill=INK)
     for gy in (vy, vy + ref):      # unambiguous end stops at exactly 0 and 100 mm
-        draw.rectangle([vx, gy, vx + end_stop, gy + bar - 1], fill=WHITE)
+        draw.rectangle([vx, gy, vx + end_stop, gy + bar - 1], fill=INK)
     label("100", vx + end_stop + _mm(1.5, dpi), vy + ref // 2 - _mm(2, dpi))
     regions["vertical_reference"] = {"x": vx, "y": vy, "length_px": ref,
                                      "length_mm": REFERENCE_MM}
@@ -127,14 +137,14 @@ def build_export_check(font_path: str | Path, dpi: float = 300.0,
 
     # Horizontal 100 mm reference
     hx = cx
-    draw.rectangle([hx, cy + end_stop // 2, hx + ref, cy + end_stop // 2 + bar - 1], fill=WHITE)
+    draw.rectangle([hx, cy + end_stop // 2, hx + ref, cy + end_stop // 2 + bar - 1], fill=INK)
     for i in range(11):
         gx = hx + round(ref * i / 10)
         tick = end_stop if i % 5 == 0 else _mm(2.5, dpi)
         draw.rectangle([gx, cy + end_stop // 2, gx + bar - 1,
-                        cy + end_stop // 2 + tick], fill=WHITE)
+                        cy + end_stop // 2 + tick], fill=INK)
     for gx in (hx, hx + ref):
-        draw.rectangle([gx, cy, gx + bar - 1, cy + end_stop], fill=WHITE)
+        draw.rectangle([gx, cy, gx + bar - 1, cy + end_stop], fill=INK)
     regions["horizontal_reference"] = {"x": hx, "y": cy, "length_px": ref,
                                        "length_mm": REFERENCE_MM}
     elements.append("horizontal_reference_100mm")
@@ -143,12 +153,12 @@ def build_export_check(font_path: str | Path, dpi: float = 300.0,
     label("50", hx + ref // 2 - _mm(3, dpi), cy)
     cy += label("100 mm", hx + ref - _mm(9, dpi), cy) + _mm(6, dpi)
 
-    tiy = render_line(font_path, BRAND_STRING, _pt(19, dpi), 0)
+    tiy = render_line(font_path, BRAND_STRING, _pt(19, dpi), 0, colour=INK)
     canvas.alpha_composite(tiy, (cx, cy))
     rendered.append(BRAND_STRING)
     cy += tiy.height + _mm(3.5, dpi)
 
-    ip = render_line(font_path, IP_PROBE, _pt(15, dpi), 0)
+    ip = render_line(font_path, IP_PROBE, _pt(15, dpi), 0, colour=INK)
     canvas.alpha_composite(ip, (cx, cy))
     rendered.append(IP_PROBE)
     cy += ip.height + _mm(5, dpi)
@@ -156,12 +166,12 @@ def build_export_check(font_path: str | Path, dpi: float = 300.0,
 
     # Solid block plus clean rules: transparency and edge integrity by eye.
     block_w, block_h = _mm(62, dpi), _mm(20, dpi)
-    draw.rectangle([cx, cy, cx + block_w - 1, cy + block_h - 1], fill=WHITE)
+    draw.rectangle([cx, cy, cx + block_w - 1, cy + block_h - 1], fill=INK)
     regions["solid_block"] = {"x": cx, "y": cy, "w": block_w, "h": block_h}
     cy += block_h + _mm(4, dpi)
     for t_mm in (2.0, 3.0):
         t = max(1, _mm(t_mm, dpi))
-        draw.rectangle([cx, cy, cx + block_w - 1, cy + t - 1], fill=WHITE)
+        draw.rectangle([cx, cy, cx + block_w - 1, cy + t - 1], fill=INK)
         cy += t + _mm(3.5, dpi)
     elements.append("solid_geometry")
 
@@ -177,9 +187,9 @@ def build_export_check(font_path: str | Path, dpi: float = 300.0,
                (inset, final_h - inset), (W - inset, final_h - inset)]
     for cxx, cyy in corners:
         draw.rectangle([cxx - arm // 2, cyy - bar // 2, cxx + arm // 2, cyy + bar // 2],
-                       fill=WHITE)
+                       fill=INK)
         draw.rectangle([cxx - bar // 2, cyy - arm // 2, cxx + bar // 2, cyy + arm // 2],
-                       fill=WHITE)
+                       fill=INK)
     regions["registration_marks"] = {
         "inset_mm": 3.0,
         "horizontal_separation_px": corners[1][0] - corners[0][0],

@@ -1,6 +1,6 @@
 {
   "package_id": "GATE-1A-EXPORT-CHECK",
-  "generated": "2026-08-17",
+  "generated": "2026-08-18",
   "gate": "1a",
   "gate_purpose": "Prove our software emits a correct DTF-ready file at the intended physical size. Does not characterise the printer.",
   "pipeline_version": "gate-1a.2",
@@ -40,8 +40,8 @@
       "width_mm": 160.02,
       "height_mm": 135.213,
       "dpi": 300.0,
-      "checksum": "c4055e7d5fdf9aab2977079e00be26a0b84ef6eb70fc6fcdb670452ded09a371",
-      "bytes": 52921
+      "checksum": "898a825314d47460e74cc2e62a1173d22b9be78ca8cc7c52bde356e1266b1a49",
+      "bytes": 49083
     }
   ],
   "export_check_elements": [
