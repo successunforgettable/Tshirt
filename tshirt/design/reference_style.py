@@ -76,13 +76,18 @@ def sticker_brush(w: float = WIDTH_MM) -> Element:
     dashed cut-line. The loosest of the three and the closest to hand-lettered
     reference work.
     """
+    # The frame's own padding has to come out of the measure, or the finished
+    # lockup overflows the width it was asked for.
+    pad_v, pad_h = 9.0, 11.0
+    inner = w - pad_h * 2
     return DashedFrame(
         Stack(gap_mm=1, align="centre", children=[
-            FitText("THE", "brush", width_mm=w * 0.34, colour=MUTED),
-            FitText("INCREDIBLE", "brush", width_mm=w * 0.92, colour=ACCENT),
-            FitText("YOU", "brush", width_mm=w * 0.52, colour=WARM),
+            FitText("THE", "brush", width_mm=inner * 0.36, colour=MUTED),
+            FitText("INCREDIBLE", "brush", width_mm=inner, colour=ACCENT),
+            FitText("YOU", "brush", width_mm=inner * 0.56, colour=WARM),
         ]),
-        pad_mm=(9, 11), dash_mm=5, gap_mm=3.5, thickness_mm=1.1, colour=MUTED)
+        pad_mm=(pad_v, pad_h), dash_mm=5, gap_mm=3.5, thickness_mm=1.1,
+        colour=MUTED)
 
 
 def slogan_highlight(w: float = WIDTH_MM) -> Element:
