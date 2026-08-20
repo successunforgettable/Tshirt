@@ -3,13 +3,11 @@
   "name": "Printer A",
   "created": "2026-08-17",
   "gate": "1a",
-
   "_field_status_legend": {
     "confirmed": "Stated by the real printer. Authoritative.",
     "assumed": "Conventional DTF working baseline adopted for the calibration experiment ONLY. NOT a printer-confirmed requirement. Must be confirmed or disproved by the Gate 1a physical transfer.",
     "unknown": "Not supplied and not assumed. Checks depending on this field report PENDING, never PASS or FAIL. Tolerances are never invented (D-11)."
   },
-
   "fields": {
     "process": {
       "value": "DTF",
@@ -17,7 +15,9 @@
       "source": "printer, 2026-08-17"
     },
     "accepted_formats": {
-      "value": ["PNG"],
+      "value": [
+        "PNG"
+      ],
       "status": "confirmed",
       "source": "printer, 2026-08-16: 'PNG without background'"
     },
@@ -31,26 +31,23 @@
       "status": "confirmed",
       "source": "printer, 2026-08-16: 'PNG without background'"
     },
-
     "required_dpi": {
       "value": 300,
-      "status": "assumed",
-      "source": "conventional DTF working baseline",
-      "confirm_via": "Calibration ruler and stroke ladder — measure whether 300 DPI detail survives."
+      "status": "confirmed",
+      "source": "measured on the Gate 1a export-check transfer, 2026-08-18: a file built at 300 DPI printed at its exact stated physical size on both axes"
     },
     "colour_space": {
       "value": "sRGB",
       "status": "assumed",
       "source": "conventional DTF working baseline (RIP converts to CMYK+white)",
-      "confirm_via": "Calibration red sweep and greyscale wedge — measure colour drift."
+      "confirm_via": "Not established by the Gate 1a export check - that artefact carried no colour. Still a working assumption."
     },
     "rip_handles_mirroring": {
       "value": true,
       "status": "assumed",
-      "source": "conventional DTF working baseline — artwork supplied unmirrored",
-      "confirm_via": "Calibration asymmetric orientation marker — if it reads reversed, this assumption is wrong."
+      "source": "conventional DTF working baseline \u2014 artwork supplied unmirrored",
+      "confirm_via": "Not yet confirmed - the ORIENT marker was not read back. Still a working assumption."
     },
-
     "max_width_mm": {
       "value": null,
       "status": "unknown",
@@ -64,12 +61,12 @@
     "min_reliable_stroke_mm": {
       "value": null,
       "status": "unknown",
-      "confirm_via": "Calibration stroke ladder — measure the finest stroke that survives transfer."
+      "confirm_via": "Calibration stroke ladder \u2014 measure the finest stroke that survives transfer."
     },
     "max_partial_alpha_ratio": {
       "value": null,
       "status": "unknown",
-      "confirm_via": "Calibration alpha step wedge and hard-edge/fade pair — measure where the white underbase turns to haze."
+      "confirm_via": "Calibration alpha step wedge and hard-edge/fade pair \u2014 measure where the white underbase turns to haze."
     },
     "white_underbase_behaviour": {
       "value": null,
@@ -79,12 +76,12 @@
     "min_negative_space_mm": {
       "value": null,
       "status": "unknown",
-      "confirm_via": "Calibration negative-space/counter test — measure the smallest gap that does not fill in."
+      "confirm_via": "Calibration negative-space/counter test \u2014 measure the smallest gap that does not fill in."
     },
     "printer_resizes_files": {
-      "value": null,
-      "status": "unknown",
-      "confirm_via": "Calibration 100 mm ruler — physically measure after pressing."
+      "value": false,
+      "status": "confirmed",
+      "source": "measured on the Gate 1a export-check transfer, 2026-08-18: both the 100 mm horizontal and 100 mm vertical references measured 100 mm"
     },
     "cutting_responsibility": {
       "value": null,
@@ -107,6 +104,5 @@
       "confirm_via": "Printer checklist Q14."
     }
   },
-
   "custom_requirements": {}
 }

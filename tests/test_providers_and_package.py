@@ -53,6 +53,17 @@ class TestPrinterProfile(unittest.TestCase):
     def setUpClass(cls):
         cls.profile = load_profile(ROOT / "profiles" / "dtf-printer-a.json")
 
+    def test_physical_measurement_promoted_size_fields_to_confirmed(self):
+        """Gate 1a measured 100 mm on both axes: the printer does not rescale."""
+        self.assertEqual(self.profile.get("printer_resizes_files").value, False)
+        self.assertEqual(self.profile.get("printer_resizes_files").status, CONFIRMED)
+        self.assertEqual(self.profile.get("required_dpi").status, CONFIRMED)
+
+    def test_a_size_measurement_does_not_confirm_colour_or_mirroring(self):
+        """Measuring 100 mm says nothing about colour or which way round it presses."""
+        self.assertEqual(self.profile.get("colour_space").status, ASSUMED)
+        self.assertEqual(self.profile.get("rip_handles_mirroring").status, ASSUMED)
+
     def test_dtf_and_png_are_confirmed(self):
         self.assertEqual(self.profile.get("process").value, "DTF")
         self.assertEqual(self.profile.get("process").status, CONFIRMED)
@@ -60,7 +71,8 @@ class TestPrinterProfile(unittest.TestCase):
         self.assertTrue(self.profile.get("requires_transparency").value)
 
     def test_working_baseline_is_marked_assumed_not_confirmed(self):
-        for name in ("required_dpi", "colour_space", "rip_handles_mirroring"):
+        # required_dpi moved to confirmed once the Gate 1a transfer was measured.
+        for name in ("colour_space", "rip_handles_mirroring"):
             f = self.profile.get(name)
             self.assertEqual(f.status, ASSUMED, f"{name} must not be presented as confirmed")
             self.assertIsNotNone(f.confirm_via, f"{name} must say how it gets confirmed")
@@ -81,7 +93,7 @@ class TestPrinterProfile(unittest.TestCase):
 
     def test_assumptions_are_enumerable_for_reporting(self):
         names = {f.name for f in self.profile.assumptions()}
-        self.assertEqual(names, {"required_dpi", "colour_space", "rip_handles_mirroring"})
+        self.assertEqual(names, {"colour_space", "rip_handles_mirroring"})
 
 
 class TestPackaging(unittest.TestCase):
