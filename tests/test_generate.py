@@ -160,3 +160,135 @@ class TestBrandRules(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReferenceDevices(unittest.TestCase):
+    """Devices read off the second batch of reference merchandise."""
+
+    def test_shadow_grows_the_element(self):
+        from tshirt.design.elements import Ctx, Shadow, Text, render
+        ctx = Ctx(dpi=DPI)
+        plain = render(Text("A", "display-black", cap_mm=20), ctx)
+        shad = render(Shadow(Text("A", "display-black", cap_mm=20),
+                             offset_mm=(2, 2)), ctx)
+        self.assertGreater(shad.width, plain.width)
+        self.assertGreater(shad.height, plain.height)
+
+    def test_outline_grows_the_element(self):
+        from tshirt.design.elements import Ctx, Outline, Text, render
+        ctx = Ctx(dpi=DPI)
+        plain = render(Text("A", "display-black", cap_mm=20), ctx)
+        out = render(Outline(Text("A", "display-black", cap_mm=20),
+                             width_mm=1.5), ctx)
+        self.assertGreater(out.width, plain.width)
+
+    def test_hollow_outline_is_a_ring(self):
+        """Hollow keeps the stroke and drops the fill, so the centre is empty."""
+        from tshirt.design.elements import Ctx, Outline, Text, render
+        img = render(Outline(Text("O", "display-black", cap_mm=30),
+                             width_mm=1.5, hollow=True), Ctx(dpi=DPI))
+        arr = np.asarray(img)
+        cy, cx = arr.shape[0] // 2, arr.shape[1] // 2
+        self.assertEqual(int(arr[cy, cx, 3]), 0, "hollow outline has a filled centre")
+
+    def test_overlap_shares_space(self):
+        """The point of overlap is that the two elements occupy the same area."""
+        from tshirt.design.elements import Ctx, Overlap, Stack, Text, render
+        ctx = Ctx(dpi=DPI)
+        a = Text("BASE", "display-black", cap_mm=20)
+        b = Text("over", "script", cap_mm=14)
+        stacked = render(Stack([a, b], gap_mm=0), ctx)
+        lapped = render(Overlap(a, b, shift=(0.0, -0.3)), ctx)
+        self.assertLess(lapped.height, stacked.height)
+
+    def test_banner_and_star_render(self):
+        from tshirt.design.elements import BLACK, Banner, Ctx, Star, Text, render
+        ctx = Ctx(dpi=DPI)
+        self.assertGreater(render(Star(size_mm=6), ctx).width, 0)
+        self.assertGreater(
+            render(Banner(Text("X", "sans-bold", cap_mm=6, colour=BLACK)), ctx).width, 0)
+
+
+class TestLineBreaking(unittest.TestCase):
+    """Each substantial word gets its own line - that is what allows scale contrast."""
+
+    def test_content_words_get_their_own_lines(self):
+        got = [l.text for l in segment("great things take time").lines]
+        self.assertEqual(got, ["GREAT", "THINGS", "TAKE", "TIME"])
+
+    def test_short_words_may_share(self):
+        lines = [l.text for l in segment("success is not final").lines]
+        self.assertIn("is not", lines)
+
+    def test_long_words_are_never_merged(self):
+        for line in segment("discipline builds wealth").lines:
+            self.assertEqual(len(line.text.split()), 1, line.text)
+
+
+class TestAccentFallback(unittest.TestCase):
+    """A phrase with no connectors still has to alternate, or it shouts flatly."""
+
+    def test_connectors_take_the_accent_when_present(self):
+        from tshirt.design.styles import _accent_indices
+        brief = segment("trust the process")
+        self.assertEqual(_accent_indices(brief), {1})
+
+    def test_alternate_lines_take_it_when_there_are_none(self):
+        from tshirt.design.styles import _accent_indices
+        brief = segment("great things take time")
+        self.assertEqual(_accent_indices(brief), {1, 3})
+
+    def test_script_styles_actually_produce_script(self):
+        """The bug this fixes: no connectors meant no script at all."""
+        import inspect
+        from tshirt.design import styles
+        for name in ("script-overlap", "burst-script", "shadow-pop"):
+            src = inspect.getsource(styles.STYLES[name])
+            self.assertIn("script", src, name)
+            self.assertIn("_accent_indices", src, name)
+
+
+class TestAttribution(unittest.TestCase):
+    """Every shirt carries a brand or seminar name under the slogan."""
+
+    def test_attribution_adds_height(self):
+        plain = generate("trust the process", styles=["highlight-stack"])[0]
+        signed = generate("trust the process", styles=["highlight-stack"],
+                          attribution="The Incredible You")[0]
+        self.assertGreater(signed.image.height, plain.image.height)
+
+    def test_attribution_is_optional(self):
+        idea = generate("trust the process", styles=["highlight-stack"])[0]
+        self.assertGreater(idea.image.width, 0)
+
+    def test_every_style_accepts_an_attribution(self):
+        for idea in generate("trust the process", attribution="Secret Blueprint"):
+            self.assertGreater(idea.image.height, 0, idea.style)
+
+    def test_attribution_is_recorded_on_the_brief(self):
+        idea = generate("trust the process", styles=["highlight-stack"],
+                        attribution="The Incredible You")[0]
+        self.assertEqual(idea.brief.attribution, "The Incredible You")
+
+
+class TestSubjectAgnostic(unittest.TestCase):
+    """Crypto phrasing is in scope too - nothing may be motivational-only."""
+
+    CRYPTO = ["hodl through the noise", "buy the dip", "stack sats stay humble",
+              "fortune favours the bold"]
+
+    def test_crypto_phrases_generate(self):
+        for phrase in self.CRYPTO:
+            ideas = generate(phrase, attribution="Secret Millionaire Blueprint")
+            self.assertEqual(len(ideas), len(STYLES), phrase)
+            for idea in ideas:
+                self.assertGreater(idea.image.width, 0, f"{phrase}/{idea.style}")
+
+    def test_no_vocabulary_is_hardcoded_to_one_subject(self):
+        import inspect
+        from tshirt.design import brief as brief_mod
+        from tshirt.design import styles as styles_mod
+        for mod in (brief_mod, styles_mod):
+            src = inspect.getsource(mod).lower()
+            for word in ("incredible", "motivational slogan"):
+                self.assertNotIn(f'"{word}', src, f"{mod.__name__} hardcodes {word}")

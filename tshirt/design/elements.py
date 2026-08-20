@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 TRANSPARENT = (0, 0, 0, 0)
 BLACK = (0, 0, 0, 255)
@@ -380,6 +380,181 @@ class RuledLabel(Element):
         out.alpha_composite(label, (arm + gap, (h - label.height) // 2))
         out.alpha_composite(rule, (total - arm, (h - rule.height) // 2))
         return out
+
+
+@dataclass
+class Shadow(Element):
+    """A child with an offset copy of itself behind it.
+
+    The most common device in the reference merchandise and the cheapest way to
+    lift type off a garment. On a dark shirt the shadow is usually the accent
+    colour rather than black, so the design reads as two-tone rather than dirty.
+    """
+
+    child: Element
+    offset_mm: tuple = (1.6, 1.6)
+    colour: tuple | None = None
+
+    def render(self, ctx: Ctx) -> Image.Image:
+        inner = self.child.render(ctx)
+        dx, dy = ctx.px(abs(self.offset_mm[0])), ctx.px(abs(self.offset_mm[1]))
+        sx = dx if self.offset_mm[0] >= 0 else 0
+        sy = dy if self.offset_mm[1] >= 0 else 0
+        img = Image.new("RGBA", (inner.width + dx, inner.height + dy), TRANSPARENT)
+
+        shadow = Image.new("RGBA", inner.size, self.colour or ctx.ink)
+        shadow.putalpha(inner.split()[3])
+        img.alpha_composite(shadow, (sx, sy))
+        img.alpha_composite(inner, (dx - sx, dy - sy))
+        return img
+
+
+@dataclass
+class Outline(Element):
+    """A child with a stroke around it, optionally hollow.
+
+    `hollow` keeps only the stroke, which is how the reference work gets a line
+    of type to recede behind a louder one without losing it.
+    """
+
+    child: Element
+    width_mm: float = 1.2
+    colour: tuple | None = None
+    hollow: bool = False
+
+    def render(self, ctx: Ctx) -> Image.Image:
+        inner = self.child.render(ctx)
+        t = max(1, ctx.px(self.width_mm))
+        pad = t + 2
+        base = Image.new("RGBA", (inner.width + pad * 2, inner.height + pad * 2),
+                         TRANSPARENT)
+        base.alpha_composite(inner, (pad, pad))
+        alpha = base.split()[3]
+
+        grown = alpha.filter(ImageFilter.MaxFilter(t * 2 + 1))
+        stroke = Image.new("RGBA", base.size, self.colour or ctx.ink)
+        stroke.putalpha(grown)
+
+        if self.hollow:
+            # Punch the original shape out, leaving only the ring.
+            ring = Image.composite(Image.new("L", base.size, 0), grown, alpha)
+            stroke.putalpha(ring)
+            return stroke
+
+        stroke.alpha_composite(base)
+        return stroke
+
+
+@dataclass
+class Burst(Element):
+    """Short radiating strokes flanking a child - the "pop" device."""
+
+    child: Element
+    rays: int = 5
+    length_mm: float = 12.0
+    thickness_mm: float = 1.4
+    gap_mm: float = 5.0
+    spread_deg: float = 46.0
+    colour: tuple | None = None
+
+    def render(self, ctx: Ctx) -> Image.Image:
+        import math
+        inner = self.child.render(ctx)
+        L, t, g = ctx.px(self.length_mm), max(1, ctx.px(self.thickness_mm)), ctx.px(self.gap_mm)
+        pad = L + g + t
+        img = Image.new("RGBA", (inner.width + pad * 2, inner.height + pad * 2),
+                        TRANSPARENT)
+        img.alpha_composite(inner, (pad, pad))
+        draw = ImageDraw.Draw(img)
+        colour = self.colour or ctx.ink
+        cy = pad + inner.height // 2
+        for side, x0 in ((-1, pad - g), (1, pad + inner.width + g)):
+            for i in range(self.rays):
+                frac = (i / max(1, self.rays - 1)) - 0.5
+                ang = math.radians(frac * self.spread_deg)
+                dx = side * L * math.cos(ang)
+                dy = L * math.sin(ang)
+                draw.line([(x0, cy), (x0 + dx, cy + dy)], fill=colour, width=t)
+        return img
+
+
+@dataclass
+class Banner(Element):
+    """A child on a ribbon with notched ends - the awards-badge device."""
+
+    child: Element
+    pad_mm: tuple = (3.0, 9.0)
+    notch_mm: float = 6.0
+    fill: tuple | None = None
+    text_colour: tuple = BLACK
+
+    def render(self, ctx: Ctx) -> Image.Image:
+        inner = self.child.render(ctx)
+        pv, ph = ctx.px(self.pad_mm[0]), ctx.px(self.pad_mm[1])
+        n = ctx.px(self.notch_mm)
+        w, h = inner.width + ph * 2, inner.height + pv * 2
+        img = Image.new("RGBA", (w, h), TRANSPARENT)
+        ImageDraw.Draw(img).polygon(
+            [(0, 0), (w - 1, 0), (w - 1 - n, h // 2), (w - 1, h - 1),
+             (0, h - 1), (n, h // 2)],
+            fill=self.fill or ctx.ink)
+        img.alpha_composite(inner, (ph, pv))
+        return img
+
+
+@dataclass
+class Star(Element):
+    """A small filled star, for punctuating a stack."""
+
+    size_mm: float = 5.0
+    points: int = 5
+    colour: tuple | None = None
+
+    def render(self, ctx: Ctx) -> Image.Image:
+        import math
+        r = ctx.px(self.size_mm) / 2
+        d = int(r * 2) + 2
+        img = Image.new("RGBA", (d, d), TRANSPARENT)
+        pts = []
+        for i in range(self.points * 2):
+            rad = r if i % 2 == 0 else r * 0.42
+            a = math.pi / 2 * 3 + i * math.pi / self.points
+            pts.append((d / 2 + rad * math.cos(a), d / 2 + rad * math.sin(a)))
+        ImageDraw.Draw(img).polygon(pts, fill=self.colour or ctx.ink)
+        return img
+
+
+@dataclass
+class Overlap(Element):
+    """Two elements sharing space, the second riding over the first.
+
+    Script crossing a line of caps is everywhere in the reference work and is the
+    single strongest signal that a design was lettered rather than typeset.
+    `shift` is a fraction of the base element's size.
+    """
+
+    base: Element
+    over: Element
+    shift: tuple = (0.0, 0.34)     # (x, y) as fractions of the base
+    align: str = "centre"
+
+    def render(self, ctx: Ctx) -> Image.Image:
+        b = self.base.render(ctx)
+        o = self.over.render(ctx)
+        ox = int(b.width * self.shift[0])
+        oy = int(b.height * self.shift[1])
+
+        x = {"left": 0, "right": b.width - o.width}.get(
+            self.align, (b.width - o.width) // 2) + ox
+        y = b.height - o.height // 2 + oy - o.height // 2
+
+        left, top = min(0, x), min(0, y)
+        w = max(b.width, x + o.width) - left
+        h = max(b.height, y + o.height) - top
+        img = Image.new("RGBA", (w, h), TRANSPARENT)
+        img.alpha_composite(b, (-left, -top))
+        img.alpha_composite(o, (x - left, y - top))
+        return img
 
 
 @dataclass

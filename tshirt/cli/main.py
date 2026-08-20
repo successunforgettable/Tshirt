@@ -177,14 +177,18 @@ def build(outdir: Path, diagnostic: bool = False) -> dict:
 
 
 def design(description: str, outdir: Path, width_mm: float, dpi: float,
-           palettes: list[str], contact_sheet: bool = True) -> dict:
+           palettes: list[str], attribution: str | None = None,
+           contact_sheet: bool = True) -> dict:
     """Type a description, get a set of ideas to choose from."""
     from ..design.generate import generate
 
-    ideas = generate(description, width_mm=width_mm, dpi=dpi, palettes=palettes)
+    ideas = generate(description, width_mm=width_mm, dpi=dpi, palettes=palettes,
+                     attribution=attribution)
     brief = ideas[0].brief
 
     print(f'Description : "{description}"')
+    if attribution:
+        print(f"Attribution : {attribution}")
     print("Lines       : " + " | ".join(
         f"{ln.text}({ln.weight[:3]})" for ln in brief.lines))
     print(f"Ideas       : {len(ideas)}  "
@@ -215,6 +219,7 @@ def design(description: str, outdir: Path, width_mm: float, dpi: float,
         "generated": date.today().isoformat(),
         "gate": "1b",
         "description": description,
+        "attribution": attribution,
         "lines": [{"text": ln.text, "weight": ln.weight} for ln in brief.lines],
         "width_mm": width_mm, "dpi": dpi,
         "ai_generation_used": False,
@@ -279,7 +284,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--outdir", default=str(ROOT / "output"))
     ap.add_argument("--width-mm", type=float, default=260.0)
     ap.add_argument("--palette", action="append", default=None,
-                    help="repeatable: mono, ice, sunset, acid")
+                    help="repeatable: mono, ice, sunset, acid, amber, orange, "
+                         "teal, candy")
+    ap.add_argument("--attribution", default=None,
+                    help='brand or seminar name signed under the slogan, '
+                         'e.g. "The Incredible You"')
     ap.add_argument("--diagnostic", action="store_true",
                     help="also emit the full calibration sheet and the pipeline test "
                          "design into DIAGNOSTIC/. Not part of Gate 1a.")
@@ -289,7 +298,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.text:
             ap.error('design needs a description, e.g. tshirt design "trust the process"')
         design(args.text, Path(args.outdir), args.width_mm, DPI,
-               args.palette or ["mono"])
+               args.palette or ["mono"], attribution=args.attribution)
         return 0
 
     manifest = build(Path(args.outdir), diagnostic=args.diagnostic)

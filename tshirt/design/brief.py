@@ -52,6 +52,10 @@ class Brief:
     phrase: str
     lines: list[Line] = field(default_factory=list)
     width_mm: float = 260.0
+    # A brand or seminar name carried under the slogan. Every reference tee that
+    # belongs to a programme signs off this way rather than putting the name in
+    # the headline, which would fight the slogan for attention.
+    attribution: str | None = None
 
     @property
     def majors(self) -> list[Line]:
@@ -66,23 +70,40 @@ class Brief:
         return [ln.text for ln in self.lines]
 
 
+SHORT_WORD = 3      # words this length or under are happy to share a line
+
+
 def _split_long(words: list[str]) -> list[list[str]]:
-    """Break a run of content words so no single line is too long to set large."""
+    """Break a run of content words into lines.
+
+    The reference merchandise gives each substantial word its own line - STAY /
+    STRONG, GREAT / THINGS / TAKE / TIME - because that is what allows the violent
+    scale contrast the style depends on. Packing words together produces even,
+    quiet lines instead.
+
+    Short words are the exception: they pair with a neighbour rather than
+    becoming a line of their own that would be set absurdly large.
+    """
     out: list[list[str]] = []
     current: list[str] = []
     for word in words:
-        candidate = current + [word]
-        if current and len(" ".join(candidate)) > MAX_MAJOR_CHARS:
+        if not current:
+            current = [word]
+            continue
+        pair_ok = (len(word) <= SHORT_WORD or len(current[-1]) <= SHORT_WORD)
+        fits = len(" ".join(current + [word])) <= MAX_MAJOR_CHARS
+        if pair_ok and fits:
+            current.append(word)
+        else:
             out.append(current)
             current = [word]
-        else:
-            current = candidate
     if current:
         out.append(current)
     return out
 
 
-def segment(phrase: str, width_mm: float = 260.0) -> Brief:
+def segment(phrase: str, width_mm: float = 260.0,
+            attribution: str | None = None) -> Brief:
     """Break a phrase into weighted lines.
 
     Explicit slashes win. Otherwise connectors are separated out and long runs of
@@ -96,11 +117,13 @@ def segment(phrase: str, width_mm: float = 260.0) -> Brief:
                       else p.lower(),
                       major=p.lower() not in CONNECTORS)
                  for p in parts]
-        return Brief(phrase=phrase, lines=lines, width_mm=width_mm)
+        return Brief(phrase=phrase, lines=lines, width_mm=width_mm,
+                     attribution=attribution)
 
     words = [w for w in re.split(r"\s+", phrase) if w]
     if not words:
-        return Brief(phrase=phrase, lines=[], width_mm=width_mm)
+        return Brief(phrase=phrase, lines=[], width_mm=width_mm,
+                     attribution=attribution)
 
     # A connector is only minor when it is not the final word - a phrase ending
     # on "YOU" or "IT" is ending on its point, not on a preposition.
@@ -121,4 +144,5 @@ def segment(phrase: str, width_mm: float = 260.0) -> Brief:
                 lines.append(Line(" ".join(chunk).upper(), major=True))
         i = j
 
-    return Brief(phrase=phrase, lines=lines, width_mm=width_mm)
+    return Brief(phrase=phrase, lines=lines, width_mm=width_mm,
+                 attribution=attribution)
