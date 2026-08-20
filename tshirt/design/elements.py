@@ -106,6 +106,38 @@ def _crop(img: Image.Image) -> Image.Image:
     return img.crop(bbox) if bbox else img
 
 
+@lru_cache(maxsize=1024)
+def _tracked_mask(text: str, face: str, size_px: int,
+                  tracking_q: int) -> Image.Image:
+    """Greyscale ink mask for one tracked line, cropped to its ink.
+
+    Geometry is cached separately from colour for two reasons. Fitting text to a
+    measure binary-searches over size, so the same line gets laid out a dozen
+    times per call; and the same design rendered in four palettes has identical
+    geometry each time. Caching the mask makes both nearly free.
+
+    Tracking is quantised to 1/16 px for the cache key - far finer than anything
+    visible, and it keeps near-identical searches hitting the same entry.
+    """
+    tracking_px = tracking_q / 16.0
+    font = ImageFont.truetype(str(face_path(face)), size_px)
+    advances = [font.getlength(c) for c in text]
+    total = sum(advances) + tracking_px * max(0, len(text) - 1)
+    pad = size_px
+    canvas = Image.new("L", (int(total) + pad * 2, size_px * 3), 0)
+    draw = ImageDraw.Draw(canvas)
+    x, y = float(pad), size_px // 2
+    for ch, adv in zip(text, advances):
+        draw.text((x, y), ch, font=font, fill=255)
+        x += adv + tracking_px
+    bbox = canvas.getbbox()
+    return canvas.crop(bbox) if bbox else canvas
+
+
+def _tracked_width(text: str, face: str, size_px: int, tracking_px: float) -> int:
+    return _tracked_mask(text, face, size_px, round(tracking_px * 16)).width
+
+
 def _draw_tracked(text: str, face: str, size_px: int, tracking_px: float,
                   colour) -> Image.Image:
     """Render one line with explicit letter-spacing, cropped to its ink.
@@ -114,17 +146,10 @@ def _draw_tracked(text: str, face: str, size_px: int, tracking_px: float,
     tracking is what lets a short word be set to a chosen measure without
     distorting the letterforms.
     """
-    font = ImageFont.truetype(str(face_path(face)), size_px)
-    advances = [font.getlength(c) for c in text]
-    total = sum(advances) + tracking_px * max(0, len(text) - 1)
-    pad = size_px
-    canvas = Image.new("RGBA", (int(total) + pad * 2, size_px * 3), TRANSPARENT)
-    draw = ImageDraw.Draw(canvas)
-    x, y = float(pad), size_px // 2
-    for ch, adv in zip(text, advances):
-        draw.text((x, y), ch, font=font, fill=colour)
-        x += adv + tracking_px
-    return _crop(canvas)
+    mask = _tracked_mask(text, face, size_px, round(tracking_px * 16))
+    img = Image.new("RGBA", mask.size, colour)
+    img.putalpha(mask)
+    return img
 
 
 @dataclass
@@ -161,12 +186,20 @@ class FitText(Element):
     def render(self, ctx: Ctx) -> Image.Image:
         target = ctx.px(self.width_mm)
         colour = self.colour or ctx.ink
-        lo, hi, best = 4, 4000, 4
+
+        # Width is very close to linear in font size, so one probe brackets the
+        # search tightly. Blind bisection over 4..4000 wastes most of its steps.
+        probe = 100
+        probe_w = _tracked_width(self.text, self.face, probe,
+                                 self.tracking_em * probe)
+        est = max(4, int(probe * target / max(1, probe_w)))
+        lo, hi = max(4, int(est * 0.85)), int(est * 1.18) + 2
+
+        best = 4
         while lo <= hi:
             mid = (lo + hi) // 2
-            w = _draw_tracked(self.text, self.face, mid,
-                              self.tracking_em * mid, colour).width
-            if w <= target:
+            if _tracked_width(self.text, self.face, mid,
+                              self.tracking_em * mid) <= target:
                 best, lo = mid, mid + 1
             else:
                 hi = mid - 1
@@ -198,9 +231,9 @@ class JustifyText(Element):
         # across a wide measure - the search simply cannot reach far enough, and
         # returns its best near-miss without complaint.
         lo, hi, best = -size * 0.3, float(target), 0.0
-        for _ in range(60):
+        for _ in range(28):
             mid = (lo + hi) / 2
-            if _draw_tracked(self.text, self.face, size, mid, colour).width <= target:
+            if _tracked_width(self.text, self.face, size, mid) <= target:
                 best, lo = mid, mid
             else:
                 hi = mid

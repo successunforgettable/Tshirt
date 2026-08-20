@@ -167,19 +167,130 @@ def build(outdir: Path, diagnostic: bool = False) -> dict:
     package.write_manifest(pkg / "validation.json",
                            {"reports": [r.summary() for r in reports]})
 
-    print(f"Package written to {pkg.relative_to(ROOT)}")
+    try:
+        shown = pkg.relative_to(ROOT)
+    except ValueError:
+        shown = pkg
+    print(f"Package written to {shown}")
     print(f"SEND TO PRINTER: PRINT/{check_pkg.filename} + print-spec.txt")
     return manifest
 
 
+def design(description: str, outdir: Path, width_mm: float, dpi: float,
+           palettes: list[str], contact_sheet: bool = True) -> dict:
+    """Type a description, get a set of ideas to choose from."""
+    from ..design.generate import generate
+
+    ideas = generate(description, width_mm=width_mm, dpi=dpi, palettes=palettes)
+    brief = ideas[0].brief
+
+    print(f'Description : "{description}"')
+    print("Lines       : " + " | ".join(
+        f"{ln.text}({ln.weight[:3]})" for ln in brief.lines))
+    print(f"Ideas       : {len(ideas)}  "
+          f"({len({i.style for i in ideas})} styles x {len(palettes)} palettes)")
+    print()
+
+    slug = "".join(c if c.isalnum() else "-" for c in description.lower()).strip("-")
+    slug = "-".join(filter(None, slug.split("-")))[:48]
+    pkg = outdir / f"IDEAS-{slug}"
+    art = pkg / "IDEAS"
+
+    records = []
+    for idea in ideas:
+        path = package.save_png(idea.image, art / f"{idea.name}.png", dpi)
+        w_mm = idea.image.width / dpi * 25.4
+        h_mm = idea.image.height / dpi * 25.4
+        print(f"  {idea.name:34} {w_mm:6.1f} x {h_mm:6.1f} mm")
+        records.append({
+            "name": idea.name, "style": idea.style, "palette": idea.palette,
+            "file": f"IDEAS/{idea.name}.png",
+            "width_mm": round(w_mm, 2), "height_mm": round(h_mm, 2),
+            "width_px": idea.image.width, "height_px": idea.image.height,
+            "checksum": package.sha256_file(path),
+        })
+
+    manifest = {
+        "package_id": pkg.name,
+        "generated": date.today().isoformat(),
+        "gate": "1b",
+        "description": description,
+        "lines": [{"text": ln.text, "weight": ln.weight} for ln in brief.lines],
+        "width_mm": width_mm, "dpi": dpi,
+        "ai_generation_used": False,
+        "deterministic": True,
+        "note": "Ideas only. None has been through print validation - pick one, "
+                "then run it through the export pipeline.",
+        "palettes_note": "Placeholder palettes. The authoritative brand red is "
+                         "still unknown and is not guessed.",
+        "ideas": records,
+    }
+    package.write_manifest(pkg / "manifest.json", manifest)
+
+    if contact_sheet:
+        _contact_sheet(ideas, pkg / "contact-sheet.png")
+        print(f"\n  contact-sheet.png")
+    try:
+        shown = pkg.relative_to(ROOT)
+    except ValueError:
+        shown = pkg          # an --outdir outside the repo is perfectly valid
+    print(f"\nWritten to {shown}")
+    return manifest
+
+
+def _contact_sheet(ideas, path: Path, tile_w: int = 760, label_h: int = 40) -> Path:
+    """One image showing every idea on a black garment, for picking from."""
+    from PIL import Image, ImageDraw, ImageFont
+    font = ImageFont.truetype(str(FONT), 22)
+    tiles = []
+    for idea in ideas:
+        im = idea.image
+        px, pt, pb = int(im.width * 0.13), int(im.height * 0.26), int(im.height * 0.30)
+        field = Image.new("RGBA", (im.width + 2 * px, im.height + pt + pb),
+                          (20, 20, 20, 255))
+        field.alpha_composite(im, (px, pt))
+        h = round(field.height * tile_w / field.width)
+        tile = field.convert("RGB").resize((tile_w, h), Image.LANCZOS)
+        strip = Image.new("RGB", (tile_w, h + label_h), (0, 0, 0))
+        strip.paste(tile, (0, label_h))
+        ImageDraw.Draw(strip).text((10, 9), idea.name, font=font, fill=(255, 255, 255))
+        tiles.append(strip)
+
+    cols = 2 if len(tiles) > 1 else 1
+    rows = (len(tiles) + cols - 1) // cols
+    cw = max(t.width for t in tiles)
+    ch = max(t.height for t in tiles)
+    gap = 20
+    sheet = Image.new("RGB", (cols * cw + (cols - 1) * gap,
+                              rows * ch + (rows - 1) * gap), (0, 0, 0))
+    for i, t in enumerate(tiles):
+        sheet.paste(t, ((i % cols) * (cw + gap), (i // cols) * (ch + gap)))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(path)
+    return path
+
+
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="tshirt", description="Gate 1a deterministic build")
-    ap.add_argument("command", choices=["build"])
+    ap = argparse.ArgumentParser(prog="tshirt", description="AI T-Shirt Studio")
+    ap.add_argument("command", choices=["build", "design"])
+    ap.add_argument("text", nargs="?", default=None,
+                    help='design: the description, e.g. "trust the process". '
+                         'Use slashes to force line breaks.')
     ap.add_argument("--outdir", default=str(ROOT / "output"))
+    ap.add_argument("--width-mm", type=float, default=260.0)
+    ap.add_argument("--palette", action="append", default=None,
+                    help="repeatable: mono, ice, sunset, acid")
     ap.add_argument("--diagnostic", action="store_true",
                     help="also emit the full calibration sheet and the pipeline test "
                          "design into DIAGNOSTIC/. Not part of Gate 1a.")
     args = ap.parse_args(argv)
+
+    if args.command == "design":
+        if not args.text:
+            ap.error('design needs a description, e.g. tshirt design "trust the process"')
+        design(args.text, Path(args.outdir), args.width_mm, DPI,
+               args.palette or ["mono"])
+        return 0
 
     manifest = build(Path(args.outdir), diagnostic=args.diagnostic)
     states = [r["readiness"] for r in manifest["validation"]]
