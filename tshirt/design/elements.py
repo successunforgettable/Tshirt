@@ -33,12 +33,23 @@ FONT_DIR = Path(__file__).resolve().parent.parent.parent / "assets" / "fonts"
 
 # Named faces, so a design spec never carries a file path.
 FACES = {
+    # Workhorse faces
     "sans-bold": "LiberationSans-Bold.ttf",
     "sans": "LiberationSans-Regular.ttf",
     "serif-bold": "LiberationSerif-Bold.ttf",
     "serif-italic": "LiberationSerif-Italic.ttf",
     "mono-bold": "LiberationMono-Bold.ttf",
     "grotesk-bold": "DejaVuSans-Bold.ttf",
+    # Display faces for merch headlines - heavy and condensed, which is what
+    # lets a stacked slogan hold the chest without going thin.
+    "display": "Anton-Regular.ttf",
+    "display-condensed": "BebasNeue-Regular.ttf",
+    "display-black": "ArchivoBlack-Regular.ttf",
+    # Script and brush. The reference merch uses a handwritten accent on almost
+    # every design - the small connecting word, or the final line. Without one
+    # of these a composition reads as corporate rather than as apparel.
+    "script": "Pacifico-Regular.ttf",
+    "brush": "CaveatBrush-Regular.ttf",
 }
 
 
@@ -336,6 +347,68 @@ class RuledLabel(Element):
         out.alpha_composite(label, (arm + gap, (h - label.height) // 2))
         out.alpha_composite(rule, (total - arm, (h - rule.height) // 2))
         return out
+
+
+@dataclass
+class DashedFrame(Element):
+    """A dashed outline around a child - the "sticker" device.
+
+    Common on motivational merch: it reads as a cut-line and gives an otherwise
+    floating lockup a defined edge.
+    """
+
+    child: Element
+    pad_mm: tuple = (8.0, 10.0)
+    dash_mm: float = 4.0
+    gap_mm: float = 3.0
+    thickness_mm: float = 1.0
+    colour: tuple | None = None
+
+    def render(self, ctx: Ctx) -> Image.Image:
+        inner = self.child.render(ctx)
+        pv, ph = ctx.px(self.pad_mm[0]), ctx.px(self.pad_mm[1])
+        w, h = inner.width + ph * 2, inner.height + pv * 2
+        img = Image.new("RGBA", (w, h), TRANSPARENT)
+        draw = ImageDraw.Draw(img)
+        colour = self.colour or ctx.ink
+        d, g, t = ctx.px(self.dash_mm), ctx.px(self.gap_mm), ctx.px(self.thickness_mm)
+
+        step = d + g
+        for x in range(0, w, step):                       # top and bottom
+            draw.rectangle([x, 0, min(x + d, w) - 1, t - 1], fill=colour)
+            draw.rectangle([x, h - t, min(x + d, w) - 1, h - 1], fill=colour)
+        for y in range(0, h, step):                       # left and right
+            draw.rectangle([0, y, t - 1, min(y + d, h) - 1], fill=colour)
+            draw.rectangle([w - t, y, w - 1, min(y + d, h) - 1], fill=colour)
+
+        img.alpha_composite(inner, (ph, pv))
+        return img
+
+
+@dataclass
+class Underline(Element):
+    """A child with a rule beneath it, inset from each end.
+
+    The swash under a script word. Ties a handwritten line back to the grid.
+    """
+
+    child: Element
+    thickness_mm: float = 2.0
+    gap_mm: float = 2.0
+    inset_frac: float = 0.06
+    colour: tuple | None = None
+
+    def render(self, ctx: Ctx) -> Image.Image:
+        inner = self.child.render(ctx)
+        t, g = ctx.px(self.thickness_mm), ctx.px(self.gap_mm)
+        w = inner.width
+        img = Image.new("RGBA", (w, inner.height + g + t), TRANSPARENT)
+        img.alpha_composite(inner, (0, 0))
+        inset = int(w * self.inset_frac)
+        ImageDraw.Draw(img).rectangle(
+            [inset, inner.height + g, w - inset - 1, inner.height + g + t - 1],
+            fill=self.colour or ctx.ink)
+        return img
 
 
 def render(element: Element, ctx: Ctx | None = None) -> Image.Image:

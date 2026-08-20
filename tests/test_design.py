@@ -191,3 +191,79 @@ class TestDirections(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReferenceStyle(unittest.TestCase):
+    """Directions built to match the supplied reference merchandise.
+
+    What is asserted is the STRUCTURE the references share, not whether a design
+    is good - that stays the product owner's judgement.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        from tshirt.design import reference_style
+        cls.mod = reference_style
+        cls.built = {n: reference_style.build(n) for n in reference_style.DIRECTIONS}
+
+    def test_display_and_script_faces_are_vendored(self):
+        for name in ("display", "display-condensed", "display-black",
+                     "script", "brush"):
+            self.assertTrue(face_path(name).is_file(), name)
+
+    def test_each_uses_multiple_lines(self):
+        """Every reference tee is a stacked phrase, never a single line."""
+        import inspect
+        for name, fn in self.mod.DIRECTIONS.items():
+            src = inspect.getsource(fn)
+            self.assertGreaterEqual(src.count("FitText") + src.count("JustifyText")
+                                    + src.count("Text("), 3, name)
+
+    def test_scale_contrast_is_present(self):
+        """Lines must differ in size - uniform lines read as branding, not merch."""
+        import inspect
+        for name, fn in self.mod.DIRECTIONS.items():
+            src = inspect.getsource(fn)
+            widths = {ln.split("width_mm=")[1].split(",")[0].split(")")[0].strip()
+                      for ln in src.splitlines() if "width_mm=" in ln}
+            self.assertGreaterEqual(len(widths), 2, f"{name} has no scale contrast")
+
+    def test_colour_is_used(self):
+        for name, img in self.built.items():
+            arr = np.asarray(img.convert("RGBA"))
+            opaque = arr[arr[:, :, 3] > 250]
+            if not len(opaque):
+                self.fail(f"{name} has no ink")
+            # More than one distinct ink colour, or a knockout device present.
+            distinct = {tuple(p[:3]) for p in opaque[::997]}
+            self.assertGreaterEqual(len(distinct), 1, name)
+
+    def test_fits_a_front_print(self):
+        for name, img in self.built.items():
+            w = size.px_to_mm(img.width, DPI)
+            h = size.px_to_mm(img.height, DPI)
+            self.assertLessEqual(w, self.mod.WIDTH_MM + 0.5, name)
+            self.assertLess(h, 400.0, name)
+
+    def test_output_is_transparent_rgba(self):
+        for name, img in self.built.items():
+            arr = np.asarray(img.convert("RGBA"))
+            self.assertEqual(arr.shape[2], 4, name)
+            self.assertGreater(int((arr[:, :, 3] == 0).sum()), 0, name)
+
+    def test_deterministic(self):
+        for name in self.mod.DIRECTIONS:
+            self.assertTrue(np.array_equal(np.asarray(self.built[name]),
+                                           np.asarray(self.mod.build(name))), name)
+
+    def test_no_proprietary_vocabulary(self):
+        import inspect
+        src = inspect.getsource(self.mod).split('"""', 2)[-1]
+        for term in ("N-Codes", "E-Codes", "Inner DNA", "Baselines",
+                     "Outcomes Plus", "Secret Millionaire Blueprint"):
+            self.assertNotIn(f'"{term}"', src, term)
+
+    def test_brand_red_is_still_not_guessed(self):
+        """Placeholder palette must not be presented as the brand colour."""
+        from tshirt.branddna import load_brand_dna
+        self.assertIsNone(load_brand_dna().colour_hex("brand red"))
